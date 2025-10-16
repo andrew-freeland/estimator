@@ -3,39 +3,41 @@
 // Extends existing database setup with vector search capabilities for RAG
 
 import "server-only";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import { vector } from "pgvector/pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+// import { vector } from "pgvector/pg"; // Temporarily disabled due to build issues
 import { sql } from "drizzle-orm";
 import logger from "lib/logger";
 
 // EA_ prefix for Estimator Assistant
 const EA_DATABASE_URL = process.env.EA_DATABASE_URL || process.env.DATABASE_URL;
-const EA_GCP_PROJECT_ID = process.env.EA_GCP_PROJECT_ID;
-const EA_GCP_REGION = process.env.EA_GCP_REGION;
+const _EA_GCP_PROJECT_ID = process.env.EA_GCP_PROJECT_ID;
+const _EA_GCP_REGION = process.env.EA_GCP_REGION;
 
 if (!EA_DATABASE_URL) {
-  throw new Error("EA_DATABASE_URL or DATABASE_URL environment variable is required");
+  throw new Error(
+    "EA_DATABASE_URL or DATABASE_URL environment variable is required",
+  );
 }
 
 // Initialize postgres connection with Cloud SQL optimizations
 const connectionString = EA_DATABASE_URL;
 
 // Configure postgres client for Cloud SQL
-const client = postgres(connectionString, {
+const pool = new Pool({
+  connectionString,
   // Cloud SQL connection optimizations
   max: 20, // Maximum number of connections
-  idle_timeout: 20, // Close idle connections after 20 seconds
-  connect_timeout: 10, // Connection timeout
-  ssl: process.env.NODE_ENV === "production" ? "require" : false,
-  // Enable prepared statements for better performance
-  prepare: true,
-  // Connection pooling for Cloud Run
-  max_lifetime: 60 * 30, // 30 minutes
+  idleTimeoutMillis: 20000, // Close idle connections after 20 seconds
+  connectionTimeoutMillis: 10000, // Connection timeout
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
 });
 
-// Initialize drizzle with the postgres client
-export const db = drizzle(client);
+// Initialize drizzle with the postgres pool
+export const db = drizzle(pool);
 
 // Vector search utilities for RAG embeddings
 export class VectorStore {
@@ -61,7 +63,7 @@ export class VectorStore {
     try {
       // Enable pgvector extension
       await this.db.execute(sql`CREATE EXTENSION IF NOT EXISTS vector;`);
-      
+
       // Create embeddings table for RAG
       await this.db.execute(sql`
         CREATE TABLE IF NOT EXISTS ea_embeddings (
@@ -111,7 +113,7 @@ export class VectorStore {
     clientId: string;
     jobId?: string;
     sourcePath: string;
-    sourceType: 'file' | 'transcript' | 'text';
+    sourceType: "file" | "transcript" | "text";
     content: string;
     embedding: number[];
     metadata?: Record<string, any>;
@@ -135,7 +137,7 @@ export class VectorStore {
           content, embedding, metadata, revision
         ) VALUES (
           ${clientId}, ${jobId}, ${sourcePath}, ${sourceType},
-          ${content}, ${vector(embedding)}, ${JSON.stringify(metadata)}, ${revision}
+          ${content}, ${sql.raw(`'[${embedding.join(",")}]'::vector`)}, ${JSON.stringify(metadata)}, ${revision}
         )
         ON CONFLICT (client_id, source_path, source_type, revision) 
         DO UPDATE SET
@@ -175,12 +177,12 @@ export class VectorStore {
         SELECT 
           id, client_id, job_id, source_path, source_type,
           content, metadata, revision, created_at,
-          1 - (embedding <=> ${vector(queryEmbedding)}) as similarity
+          1 - (embedding <=> ${sql.raw(`'[${queryEmbedding.join(",")}]'::vector`)}) as similarity
         FROM ea_embeddings
         WHERE client_id = ${clientId}
           ${jobId ? sql`AND (job_id = ${jobId} OR job_id IS NULL)` : sql``}
-          AND 1 - (embedding <=> ${vector(queryEmbedding)}) > ${threshold}
-        ORDER BY embedding <=> ${vector(queryEmbedding)}
+          AND 1 - (embedding <=> ${sql.raw(`'[${queryEmbedding.join(",")}]'::vector`)}) > ${threshold}
+        ORDER BY embedding <=> ${sql.raw(`'[${queryEmbedding.join(",")}]'::vector`)}
         LIMIT ${limit};
       `);
 
