@@ -1,6 +1,8 @@
 // @module: buildertrend_mcp
-// Buildertrend MCP tool for Estimator Assistant
-// Provides access to job data, schedules, and historical costs
+// Buildertrend MCP tool for Estimator Assistant (OPTIONAL)
+// Provides access to job data, schedules, and historical costs via API
+// NOTE: This is optional - the system works primarily with manually uploaded documents
+// If no API key is provided, users should upload Buildertrend export reports instead
 
 import "server-only";
 import { Tool } from "ai";
@@ -14,8 +16,9 @@ const EA_BUILDERTREND_BASE_URL =
   process.env.EA_BUILDERTREND_BASE_URL || "https://api.buildertrend.com/v1";
 
 if (!EA_BUILDERTREND_API_KEY) {
-  logger.warn(
-    "EA_BUILDERTREND_API_KEY not set - Buildertrend tools will be disabled",
+  logger.info(
+    "EA_BUILDERTREND_API_KEY not set - Buildertrend API tools disabled. " +
+      "Users can upload Buildertrend export reports as documents instead.",
   );
 }
 
