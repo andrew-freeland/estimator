@@ -4,8 +4,7 @@
 
 import "server-only";
 import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "lib/auth";
+import { getSession } from "@/lib/auth/auth-instance";
 import { logSecurityEvent } from "lib/logs";
 import logger from "lib/logger";
 
@@ -50,7 +49,7 @@ export async function withSecurity<T>(
 
   try {
     // Get session
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     if (!session?.user?.id) {
       await logSecurityEvent({
         event: "unauthorized_access_attempt",
@@ -460,11 +459,4 @@ export class InputValidator {
   }
 }
 
-// Export security utilities
-export {
-  SecurityContext,
-  Permission,
-  DataAccessControl,
-  RateLimiter,
-  InputValidator,
-};
+// All exports are already defined above (interfaces, types, classes, and functions)
