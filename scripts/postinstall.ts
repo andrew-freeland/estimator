@@ -35,6 +35,9 @@ async function main() {
     console.log(
       "Running on Vercel, skipping database migration (will be handled at runtime).",
     );
+    console.log(
+      "Vercel build environment detected - no database operations needed.",
+    );
     // Skip database migration on Vercel - it will be handled at runtime when the app starts
   } else if (IS_DOCKER_ENV) {
     if (FILE_BASED_MCP_CONFIG) {
