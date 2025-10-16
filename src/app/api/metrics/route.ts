@@ -4,18 +4,17 @@
 
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { withSecurity } from "lib/security";
-import { db } from "lib/gcp/db";
+import { withSecurity } from "@/lib/security";
+import { db } from "@/lib/gcp/db";
 import {
   DocumentsTable,
   JobsTable,
   LogsTable,
   EstimatesTable,
   ToolUsageTable,
-} from "lib/db/pg/schema.pg";
+} from "@/lib/db/pg/schema.pg";
 import { sql, count, avg, max, min } from "drizzle-orm";
-import { getLogStats } from "lib/logs";
-import logger from "lib/logger";
+import logger from "@/lib/logger";
 
 // Metrics interfaces
 interface SystemMetrics {
@@ -62,18 +61,17 @@ async function getDocumentMetrics(
   clientId?: string,
 ): Promise<SystemMetrics["documents"]> {
   try {
-    let query = db
+    const query = db
       .select({
         total: count(),
         sourceType: DocumentsTable.sourceType,
         avgDimensions: avg(sql`array_length(${DocumentsTable.embedding}, 1)`),
       })
       .from(DocumentsTable)
-      .groupBy(DocumentsTable.sourceType);
-
-    if (clientId) {
-      query = query.where(sql`${DocumentsTable.clientId} = ${clientId}`);
-    }
+      .groupBy(DocumentsTable.sourceType)
+      .where(
+        clientId ? sql`${DocumentsTable.clientId} = ${clientId}` : undefined,
+      );
 
     const results = await query;
 
@@ -110,7 +108,7 @@ async function getJobMetrics(
   clientId?: string,
 ): Promise<SystemMetrics["jobs"]> {
   try {
-    let query = db
+    const query = db
       .select({
         total: count(),
         status: JobsTable.status,
@@ -118,11 +116,8 @@ async function getJobMetrics(
         avgActualCost: avg(JobsTable.actualCost),
       })
       .from(JobsTable)
-      .groupBy(JobsTable.status);
-
-    if (clientId) {
-      query = query.where(sql`${JobsTable.clientId} = ${clientId}`);
-    }
+      .groupBy(JobsTable.status)
+      .where(clientId ? sql`${JobsTable.clientId} = ${clientId}` : undefined);
 
     const results = await query;
 
@@ -167,7 +162,7 @@ async function getEstimateMetrics(
   clientId?: string,
 ): Promise<SystemMetrics["estimates"]> {
   try {
-    let query = db
+    const query = db
       .select({
         total: count(),
         avgConfidence: avg(EstimatesTable.confidence),
@@ -175,11 +170,10 @@ async function getEstimateMetrics(
         minConfidence: min(EstimatesTable.confidence),
         maxConfidence: max(EstimatesTable.confidence),
       })
-      .from(EstimatesTable);
-
-    if (clientId) {
-      query = query.where(sql`${EstimatesTable.clientId} = ${clientId}`);
-    }
+      .from(EstimatesTable)
+      .where(
+        clientId ? sql`${EstimatesTable.clientId} = ${clientId}` : undefined,
+      );
 
     const result = await query.then((rows) => rows[0]);
 
@@ -195,8 +189,6 @@ async function getEstimateMetrics(
     const total = Number(result.total);
     const avgConfidence = Number(result.avgConfidence) || 0;
     const avgEstimate = Number(result.avgEstimate) || 0;
-    const _minConf = Number(result.minConfidence) || 0;
-    const _maxConf = Number(result.maxConfidence) || 0;
 
     // Calculate confidence ranges
     const byConfidenceRange = {
@@ -207,19 +199,16 @@ async function getEstimateMetrics(
     };
 
     // Get detailed confidence distribution
-    let confidenceQuery = db
+    const confidenceQuery = db
       .select({
         confidence: EstimatesTable.confidence,
         count: count(),
       })
       .from(EstimatesTable)
-      .groupBy(EstimatesTable.confidence);
-
-    if (clientId) {
-      confidenceQuery = confidenceQuery.where(
-        sql`${EstimatesTable.clientId} = ${clientId}`,
+      .groupBy(EstimatesTable.confidence)
+      .where(
+        clientId ? sql`${EstimatesTable.clientId} = ${clientId}` : undefined,
       );
-    }
 
     const confidenceResults = await confidenceQuery;
 
@@ -256,7 +245,7 @@ async function getLogMetrics(
   clientId?: string,
 ): Promise<SystemMetrics["logs"]> {
   try {
-    let query = db
+    const query = db
       .select({
         total: count(),
         eventType: LogsTable.eventType,
@@ -264,11 +253,8 @@ async function getLogMetrics(
         avgDuration: avg(LogsTable.duration),
       })
       .from(LogsTable)
-      .groupBy(LogsTable.eventType, LogsTable.severity);
-
-    if (clientId) {
-      query = query.where(sql`${LogsTable.clientId} = ${clientId}`);
-    }
+      .groupBy(LogsTable.eventType, LogsTable.severity)
+      .where(clientId ? sql`${LogsTable.clientId} = ${clientId}` : undefined);
 
     const results = await query;
 
@@ -315,7 +301,7 @@ async function getToolUsageMetrics(
   clientId?: string,
 ): Promise<SystemMetrics["toolUsage"]> {
   try {
-    let query = db
+    const query = db
       .select({
         total: count(),
         toolName: ToolUsageTable.toolName,
@@ -323,11 +309,10 @@ async function getToolUsageMetrics(
         avgDuration: avg(ToolUsageTable.duration),
       })
       .from(ToolUsageTable)
-      .groupBy(ToolUsageTable.toolName, ToolUsageTable.success);
-
-    if (clientId) {
-      query = query.where(sql`${ToolUsageTable.clientId} = ${clientId}`);
-    }
+      .groupBy(ToolUsageTable.toolName, ToolUsageTable.success)
+      .where(
+        clientId ? sql`${ToolUsageTable.clientId} = ${clientId}` : undefined,
+      );
 
     const results = await query;
 

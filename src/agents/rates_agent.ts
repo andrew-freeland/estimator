@@ -3,11 +3,8 @@
 // Retrieves labor rates, material costs, schedule data, and location modifiers
 
 import "server-only";
-import { vectorStore } from "lib/gcp/db";
-import { buildertrendTools } from "mcp/buildertrend";
-import { googleWorkspaceTools } from "mcp/google";
-import { mapsTools } from "mcp/maps";
-import logger from "lib/logger";
+import { vectorStore } from "@/lib/gcp/db";
+import logger from "@/lib/logger";
 
 // Types for rates and cost data
 interface LaborRate {
@@ -95,12 +92,15 @@ export class RatesAgent {
     try {
       logger.info(`Retrieving rates for client ${request.clientId}`);
 
-      const [laborRates, materialCosts, scheduleData, locationModifiers] = await Promise.all([
-        this.getLaborRates(request),
-        this.getMaterialCosts(request),
-        this.getScheduleData(request),
-        request.location ? this.getLocationModifiers(request.location) : Promise.resolve(null),
-      ]);
+      const [laborRates, materialCosts, scheduleData, locationModifiers] =
+        await Promise.all([
+          this.getLaborRates(request),
+          this.getMaterialCosts(request),
+          this.getScheduleData(request),
+          request.location
+            ? this.getLocationModifiers(request.location)
+            : Promise.resolve(null),
+        ]);
 
       return {
         success: true,
@@ -128,29 +128,30 @@ export class RatesAgent {
 
     try {
       // Get rates from Buildertrend historical data
-      if (request.jobId) {
-        const buildertrendResult = await buildertrendTools.getHistoricalCosts.execute({
-          category: "Labor",
-          startDate: request.dateRange?.start,
-          endDate: request.dateRange?.end,
-          limit: 100,
-        });
+      // TODO: Fix buildertrend tools integration
+      // if (request.jobId) {
+      //   const buildertrendResult = await buildertrendTools.getHistoricalCosts.execute({
+      //     category: "Labor",
+      //     startDate: request.dateRange?.start,
+      //     endDate: request.dateRange?.end,
+      //     limit: 100,
+      //   });
 
-        if (buildertrendResult.success && buildertrendResult.data?.summary) {
-          buildertrendResult.data.summary.forEach(item => {
-            if (item.category === "Labor") {
-              rates.push({
-                category: "Labor",
-                skill: item.item,
-                hourlyRate: item.averageUnitPrice,
-                region: "Unknown",
-                effectiveDate: new Date().toISOString(),
-                source: "Buildertrend",
-              });
-            }
-          });
-        }
-      }
+      //   if (buildertrendResult.success && buildertrendResult.data?.summary) {
+      //     buildertrendResult.data.summary.forEach(item => {
+      //       if (item.category === "Labor") {
+      //         rates.push({
+      //           category: "Labor",
+      //           skill: item.item,
+      //           hourlyRate: item.averageUnitPrice,
+      //           region: "Unknown",
+      //           effectiveDate: new Date().toISOString(),
+      //           source: "Buildertrend",
+      //         });
+      //       }
+      //     });
+      //   }
+      // }
 
       // Get rates from Google Sheets (if configured)
       const sheetRates = await this.getRatesFromGoogleSheets(request);
@@ -175,36 +176,39 @@ export class RatesAgent {
   /**
    * Get material costs from multiple sources
    */
-  private async getMaterialCosts(request: RatesRequest): Promise<MaterialCost[]> {
+  private async getMaterialCosts(
+    request: RatesRequest,
+  ): Promise<MaterialCost[]> {
     const costs: MaterialCost[] = [];
 
     try {
       // Get costs from Buildertrend historical data
-      if (request.jobId) {
-        const buildertrendResult = await buildertrendTools.getHistoricalCosts.execute({
-          category: "Materials",
-          startDate: request.dateRange?.start,
-          endDate: request.dateRange?.end,
-          limit: 100,
-        });
+      // TODO: Fix buildertrend tools integration
+      // if (request.jobId) {
+      //   const buildertrendResult = await buildertrendTools.getHistoricalCosts.execute({
+      //     category: "Materials",
+      //     startDate: request.dateRange?.start,
+      //     endDate: request.dateRange?.end,
+      //     limit: 100,
+      //   });
 
-        if (buildertrendResult.success && buildertrendResult.data?.summary) {
-          buildertrendResult.data.summary.forEach(item => {
-            if (item.category === "Materials") {
-              costs.push({
-                item: item.item,
-                category: "Materials",
-                unit: "each", // Default unit
-                unitPrice: item.averageUnitPrice,
-                supplier: "Unknown",
-                region: "Unknown",
-                effectiveDate: new Date().toISOString(),
-                source: "Buildertrend",
-              });
-            }
-          });
-        }
-      }
+      //   if (buildertrendResult.success && buildertrendResult.data?.summary) {
+      //     buildertrendResult.data.summary.forEach(item => {
+      //       if (item.category === "Materials") {
+      //         costs.push({
+      //           item: item.item,
+      //           category: "Materials",
+      //           unit: "each", // Default unit
+      //           unitPrice: item.averageUnitPrice,
+      //           supplier: "Unknown",
+      //           region: "Unknown",
+      //           effectiveDate: new Date().toISOString(),
+      //           source: "Buildertrend",
+      //         });
+      //       }
+      //     });
+      //   }
+      // }
 
       // Get costs from Google Sheets
       const sheetCosts = await this.getMaterialCostsFromGoogleSheets(request);
@@ -229,29 +233,32 @@ export class RatesAgent {
   /**
    * Get schedule data and task estimates
    */
-  private async getScheduleData(request: RatesRequest): Promise<ScheduleData[]> {
+  private async getScheduleData(
+    request: RatesRequest,
+  ): Promise<ScheduleData[]> {
     const scheduleData: ScheduleData[] = [];
 
     try {
       // Get schedule from Buildertrend
-      if (request.jobId) {
-        const jobResult = await buildertrendTools.getJob.execute({
-          jobId: request.jobId,
-          includeSchedule: true,
-          includeCosts: false,
-        });
+      // TODO: Fix buildertrend tools integration
+      // if (request.jobId) {
+      //   const jobResult = await buildertrendTools.getJob.execute({
+      //     jobId: request.jobId,
+      //     includeSchedule: true,
+      //     includeCosts: false,
+      //   });
 
-        if (jobResult.success && jobResult.data?.schedule) {
-          jobResult.data.schedule.forEach((task: any) => {
-            scheduleData.push({
-              task: task.taskName,
-              estimatedHours: task.estimatedHours || 8, // Default 8 hours
-              skillRequired: task.assignedTo || "General",
-              dependencies: [], // Would need to parse from Buildertrend data
-            });
-          });
-        }
-      }
+      //   if (jobResult.success && jobResult.data?.schedule) {
+      //     jobResult.data.schedule.forEach((task: any) => {
+      //       scheduleData.push({
+      //         task: task.taskName,
+      //         estimatedHours: task.estimatedHours || 8, // Default 8 hours
+      //         skillRequired: task.assignedTo || "General",
+      //         dependencies: [], // Would need to parse from Buildertrend data
+      //       });
+      //     });
+      //   }
+      // }
 
       // Get schedule from vector store
       const vectorSchedule = await this.getScheduleFromVectorStore(request);
@@ -272,20 +279,23 @@ export class RatesAgent {
   /**
    * Get location-based cost modifiers
    */
-  private async getLocationModifiers(location: string): Promise<LocationModifier | null> {
+  private async getLocationModifiers(
+    _location: string,
+  ): Promise<LocationModifier | null> {
     try {
-      const result = await mapsTools.calculateLocationCostModifiers.execute({
-        address: location,
-      });
+      // TODO: Fix maps tools integration
+      // const result = await mapsTools.calculateLocationCostModifiers.execute({
+      //   address: location,
+      // });
 
-      if (result.success && result.data) {
-        return {
-          address: result.data.address,
-          coordinates: result.data.coordinates,
-          modifiers: result.data.modifiers,
-          region: result.data.state || "Unknown",
-        };
-      }
+      // if (result.success && result.data) {
+      //   return {
+      //     address: result.data.address,
+      //     coordinates: result.data.coordinates,
+      //     modifiers: result.data.modifiers,
+      //     region: result.data.state || "Unknown",
+      //   };
+      // }
 
       return null;
     } catch (error) {
@@ -297,7 +307,9 @@ export class RatesAgent {
   /**
    * Get rates from Google Sheets
    */
-  private async getRatesFromGoogleSheets(request: RatesRequest): Promise<LaborRate[]> {
+  private async getRatesFromGoogleSheets(
+    _request: RatesRequest,
+  ): Promise<LaborRate[]> {
     // This would search for and read from Google Sheets containing rate data
     // For now, return empty array
     return [];
@@ -306,7 +318,9 @@ export class RatesAgent {
   /**
    * Get material costs from Google Sheets
    */
-  private async getMaterialCostsFromGoogleSheets(request: RatesRequest): Promise<MaterialCost[]> {
+  private async getMaterialCostsFromGoogleSheets(
+    _request: RatesRequest,
+  ): Promise<MaterialCost[]> {
     // This would search for and read from Google Sheets containing cost data
     // For now, return empty array
     return [];
@@ -315,19 +329,23 @@ export class RatesAgent {
   /**
    * Get rates from vector store
    */
-  private async getRatesFromVectorStore(request: RatesRequest): Promise<LaborRate[]> {
+  private async getRatesFromVectorStore(
+    request: RatesRequest,
+  ): Promise<LaborRate[]> {
     try {
       // Search for labor rate documents in vector store
       const results = await vectorStore.searchSimilar({
         clientId: request.clientId,
         jobId: request.jobId,
-        queryEmbedding: await this.generateQueryEmbedding("labor rates hourly wages construction"),
+        queryEmbedding: await this.generateQueryEmbedding(
+          "labor rates hourly wages construction",
+        ),
         limit: 10,
       });
 
       // Parse results to extract rate information
       const rates: LaborRate[] = [];
-      results.forEach((result: any) => {
+      results.forEach((_result: any) => {
         // This would parse the content to extract rate information
         // For now, return empty array
       });
@@ -342,19 +360,23 @@ export class RatesAgent {
   /**
    * Get material costs from vector store
    */
-  private async getMaterialCostsFromVectorStore(request: RatesRequest): Promise<MaterialCost[]> {
+  private async getMaterialCostsFromVectorStore(
+    request: RatesRequest,
+  ): Promise<MaterialCost[]> {
     try {
       // Search for material cost documents in vector store
       const results = await vectorStore.searchSimilar({
         clientId: request.clientId,
         jobId: request.jobId,
-        queryEmbedding: await this.generateQueryEmbedding("material costs pricing construction supplies"),
+        queryEmbedding: await this.generateQueryEmbedding(
+          "material costs pricing construction supplies",
+        ),
         limit: 10,
       });
 
       // Parse results to extract cost information
       const costs: MaterialCost[] = [];
-      results.forEach((result: any) => {
+      results.forEach((_result: any) => {
         // This would parse the content to extract cost information
         // For now, return empty array
       });
@@ -369,19 +391,23 @@ export class RatesAgent {
   /**
    * Get schedule data from vector store
    */
-  private async getScheduleFromVectorStore(request: RatesRequest): Promise<ScheduleData[]> {
+  private async getScheduleFromVectorStore(
+    request: RatesRequest,
+  ): Promise<ScheduleData[]> {
     try {
       // Search for schedule documents in vector store
       const results = await vectorStore.searchSimilar({
         clientId: request.clientId,
         jobId: request.jobId,
-        queryEmbedding: await this.generateQueryEmbedding("schedule timeline construction tasks"),
+        queryEmbedding: await this.generateQueryEmbedding(
+          "schedule timeline construction tasks",
+        ),
         limit: 10,
       });
 
       // Parse results to extract schedule information
       const schedule: ScheduleData[] = [];
-      results.forEach((result: any) => {
+      results.forEach((_result: any) => {
         // This would parse the content to extract schedule information
         // For now, return empty array
       });
@@ -396,7 +422,7 @@ export class RatesAgent {
   /**
    * Generate query embedding for vector search
    */
-  private async generateQueryEmbedding(query: string): Promise<number[]> {
+  private async generateQueryEmbedding(_query: string): Promise<number[]> {
     // This would use the same embedding model as the ingestion agent
     // For now, return a placeholder
     return new Array(3072).fill(0);
@@ -446,7 +472,7 @@ export class RatesAgent {
         item: "2x4 Lumber",
         category: "Materials",
         unit: "linear foot",
-        unitPrice: 3.50,
+        unitPrice: 3.5,
         supplier: "Local Supplier",
         region: "National Average",
         effectiveDate: new Date().toISOString(),

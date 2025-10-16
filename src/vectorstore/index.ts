@@ -4,10 +4,10 @@
 
 import "server-only";
 import { openai } from "@ai-sdk/openai";
-import { generateEmbedding } from "ai";
-import { vectorStore } from "lib/gcp/db";
-import { config } from "lib/config";
-import logger from "lib/logger";
+import { embed } from "ai";
+import { vectorStore } from "@/lib/gcp/db";
+import { config } from "@/lib/config";
+import logger from "@/lib/logger";
 
 // Types for vector operations
 interface EmbeddingRequest {
@@ -54,9 +54,11 @@ export class VectorStoreService {
    */
   async generateEmbedding(request: EmbeddingRequest): Promise<EmbeddingResult> {
     try {
-      logger.info(`Generating embedding for text (${request.text.length} chars)`);
+      logger.info(
+        `Generating embedding for text (${request.text.length} chars)`,
+      );
 
-      const { embedding } = await generateEmbedding({
+      const { embedding } = await embed({
         model: openai.embedding(config.aiConfig.embeddingModel),
         value: request.text,
       });
@@ -79,7 +81,7 @@ export class VectorStoreService {
     clientId: string;
     jobId?: string;
     sourcePath: string;
-    sourceType: 'file' | 'transcript' | 'text';
+    sourceType: "file" | "transcript" | "text";
     content: string;
     metadata?: Record<string, any>;
   }) {
@@ -149,14 +151,16 @@ export class VectorStoreService {
   /**
    * Batch store multiple embeddings
    */
-  async batchStoreEmbeddings(requests: Array<{
-    clientId: string;
-    jobId?: string;
-    sourcePath: string;
-    sourceType: 'file' | 'transcript' | 'text';
-    content: string;
-    metadata?: Record<string, any>;
-  }>) {
+  async batchStoreEmbeddings(
+    requests: Array<{
+      clientId: string;
+      jobId?: string;
+      sourcePath: string;
+      sourceType: "file" | "transcript" | "text";
+      content: string;
+      metadata?: Record<string, any>;
+    }>,
+  ) {
     const results = [];
 
     // Process in batches to avoid overwhelming the API
@@ -164,7 +168,7 @@ export class VectorStoreService {
     for (let i = 0; i < requests.length; i += batchSize) {
       const batch = requests.slice(i, i + batchSize);
       const batchResults = await Promise.all(
-        batch.map(request => this.storeEmbedding(request))
+        batch.map((request) => this.storeEmbedding(request)),
       );
       results.push(...batchResults);
     }
@@ -217,18 +221,20 @@ export class VectorStoreService {
   /**
    * Search for construction-specific content
    */
-  async searchConstructionContent(request: SearchRequest & {
-    categories?: string[];
-    projectType?: string;
-  }): Promise<SearchResult[]> {
+  async searchConstructionContent(
+    request: SearchRequest & {
+      categories?: string[];
+      projectType?: string;
+    },
+  ): Promise<SearchResult[]> {
     try {
       // Enhance query with construction-specific terms
       let enhancedQuery = request.query;
-      
+
       if (request.categories) {
         enhancedQuery += ` ${request.categories.join(" ")}`;
       }
-      
+
       if (request.projectType) {
         enhancedQuery += ` ${request.projectType} construction project`;
       }

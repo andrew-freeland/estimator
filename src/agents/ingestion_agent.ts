@@ -4,21 +4,22 @@
 
 import "server-only";
 import { openai } from "@ai-sdk/openai";
-import { generateEmbedding } from "ai";
-import { vectorStore } from "lib/gcp/db";
-import { gcsFileStorage } from "lib/gcp/storage";
-import logger from "lib/logger";
+import { embed, generateText } from "ai";
+import { vectorStore } from "@/lib/gcp/db";
+import logger from "@/lib/logger";
 
 // EA_ prefix for Estimator Assistant
-const EA_EMBEDDING_MODEL = process.env.EA_EMBEDDING_MODEL || "text-embedding-3-large";
-const EA_TRANSCRIPTION_MODEL = process.env.EA_TRANSCRIPTION_MODEL || "whisper-1";
+const EA_EMBEDDING_MODEL =
+  process.env.EA_EMBEDDING_MODEL || "text-embedding-3-large";
+const EA_TRANSCRIPTION_MODEL =
+  process.env.EA_TRANSCRIPTION_MODEL || "whisper-1";
 
 // Types for ingestion processing
 interface IngestionRequest {
   clientId: string;
   jobId?: string;
   sourcePath: string;
-  sourceType: 'file' | 'transcript' | 'text';
+  sourceType: "file" | "transcript" | "text";
   content?: string; // For text input
   fileBuffer?: Buffer; // For file uploads
   mimeType?: string;
@@ -65,19 +66,21 @@ export class IngestionAgent {
    */
   async ingest(request: IngestionRequest): Promise<IngestionResult> {
     try {
-      logger.info(`Starting ingestion for ${request.sourcePath} (${request.sourceType})`);
+      logger.info(
+        `Starting ingestion for ${request.sourcePath} (${request.sourceType})`,
+      );
 
       let parsedContent: ParsedContent;
 
       // Process based on source type
       switch (request.sourceType) {
-        case 'file':
+        case "file":
           parsedContent = await this.parseFile(request);
           break;
-        case 'transcript':
+        case "transcript":
           parsedContent = await this.parseTranscript(request);
           break;
-        case 'text':
+        case "text":
           parsedContent = await this.parseText(request);
           break;
         default:
@@ -128,15 +131,15 @@ export class IngestionAgent {
     const { fileBuffer, mimeType } = request;
 
     // Handle different file types
-    if (mimeType.startsWith('text/')) {
-      return this.parseTextFile(fileBuffer);
-    } else if (mimeType === 'application/pdf') {
+    if (mimeType.startsWith("text/")) {
+      return this.parseTextFile(request);
+    } else if (mimeType === "application/pdf") {
       return this.parsePDF(fileBuffer);
-    } else if (mimeType.includes('word') || mimeType.includes('document')) {
+    } else if (mimeType.includes("word") || mimeType.includes("document")) {
       return this.parseWordDocument(fileBuffer);
-    } else if (mimeType.startsWith('image/')) {
+    } else if (mimeType.startsWith("image/")) {
       return this.parseImage(fileBuffer);
-    } else if (mimeType.includes('audio')) {
+    } else if (mimeType.includes("audio")) {
       return this.parseAudio(fileBuffer);
     } else {
       throw new Error(`Unsupported file type: ${mimeType}`);
@@ -146,9 +149,11 @@ export class IngestionAgent {
   /**
    * Parse text files
    */
-  private async parseTextFile(buffer: Buffer): Promise<ParsedContent> {
-    const text = buffer.toString('utf-8');
-    return this.parseText({ content: text });
+  private async parseTextFile(
+    request: IngestionRequest,
+  ): Promise<ParsedContent> {
+    const text = request.fileBuffer!.toString("utf-8");
+    return this.parseText({ ...request, content: text });
   }
 
   /**
@@ -157,19 +162,19 @@ export class IngestionAgent {
   private async parsePDF(buffer: Buffer): Promise<ParsedContent> {
     // For now, we'll use a simple approach
     // In production, you might want to use a dedicated PDF parser
-    const text = buffer.toString('utf-8');
-    
+    const text = buffer.toString("utf-8");
+
     // Basic PDF text extraction (this is simplified)
     const cleanText = text
-      .replace(/\n\s*\n/g, '\n') // Remove excessive whitespace
-      .replace(/[^\x20-\x7E\n\r]/g, '') // Remove non-printable characters
+      .replace(/\n\s*\n/g, "\n") // Remove excessive whitespace
+      .replace(/[^\x20-\x7E\n\r]/g, "") // Remove non-printable characters
       .trim();
 
     return {
       text: cleanText,
       metadata: {
         wordCount: cleanText.split(/\s+/).length,
-        language: 'en', // Could be detected
+        language: "en", // Could be detected
         confidence: 0.8,
       },
     };
@@ -181,13 +186,13 @@ export class IngestionAgent {
   private async parseWordDocument(buffer: Buffer): Promise<ParsedContent> {
     // Simplified Word document parsing
     // In production, use a library like mammoth or docx
-    const text = buffer.toString('utf-8');
-    
+    const text = buffer.toString("utf-8");
+
     return {
       text,
       metadata: {
         wordCount: text.split(/\s+/).length,
-        language: 'en',
+        language: "en",
         confidence: 0.7,
       },
     };
@@ -199,11 +204,11 @@ export class IngestionAgent {
   private async parseImage(buffer: Buffer): Promise<ParsedContent> {
     try {
       // Convert buffer to base64
-      const base64Image = buffer.toString('base64');
-      
+      const base64Image = buffer.toString("base64");
+
       // Use OpenAI Vision API to extract text from image
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+      const response = await generateText({
+        model: openai("gpt-4o"),
         messages: [
           {
             role: "user",
@@ -213,24 +218,22 @@ export class IngestionAgent {
                 text: "Extract all text from this image. If it contains construction plans, estimates, or project details, format it clearly with sections and measurements.",
               },
               {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${base64Image}`,
-                },
+                type: "image",
+                image: `data:image/jpeg;base64,${base64Image}`,
               },
             ],
           },
         ],
-        max_tokens: 2000,
+        maxOutputTokens: 2000,
       });
 
-      const text = response.choices[0]?.message?.content || '';
-      
+      const text = response.text || "";
+
       return {
         text,
         metadata: {
           wordCount: text.split(/\s+/).length,
-          language: 'en',
+          language: "en",
           confidence: 0.9,
         },
       };
@@ -247,31 +250,34 @@ export class IngestionAgent {
     try {
       // Use OpenAI Whisper API for transcription
       const formData = new FormData();
-      const blob = new Blob([buffer], { type: 'audio/wav' });
-      formData.append('file', blob, 'audio.wav');
-      formData.append('model', EA_TRANSCRIPTION_MODEL);
-      formData.append('response_format', 'json');
+      const blob = new Blob([new Uint8Array(buffer)], { type: "audio/wav" });
+      formData.append("file", blob, "audio.wav");
+      formData.append("model", EA_TRANSCRIPTION_MODEL);
+      formData.append("response_format", "json");
 
-      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      const response = await fetch(
+        "https://api.openai.com/v1/audio/transcriptions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: formData,
         },
-        body: formData,
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`Whisper API error: ${response.status}`);
       }
 
       const result = await response.json();
-      const text = result.text || '';
+      const text = result.text || "";
 
       return {
         text,
         metadata: {
           wordCount: text.split(/\s+/).length,
-          language: result.language || 'en',
+          language: result.language || "en",
           confidence: 0.95,
         },
       };
@@ -284,21 +290,23 @@ export class IngestionAgent {
   /**
    * Parse transcript text
    */
-  private async parseTranscript(request: IngestionRequest): Promise<ParsedContent> {
+  private async parseTranscript(
+    request: IngestionRequest,
+  ): Promise<ParsedContent> {
     if (!request.content) {
       throw new Error("Content required for transcript parsing");
     }
 
     // Clean and structure transcript text
     const text = request.content
-      .replace(/\n\s*\n/g, '\n') // Remove excessive whitespace
+      .replace(/\n\s*\n/g, "\n") // Remove excessive whitespace
       .trim();
 
     return {
       text,
       metadata: {
         wordCount: text.split(/\s+/).length,
-        language: 'en',
+        language: "en",
         confidence: 0.9,
       },
     };
@@ -321,7 +329,7 @@ export class IngestionAgent {
       text,
       metadata: {
         wordCount: text.split(/\s+/).length,
-        language: 'en',
+        language: "en",
         confidence: 1.0,
         sections,
       },
@@ -348,7 +356,7 @@ export class IngestionAgent {
     const sectionPatterns = [
       /^(\d+\.?\s*[A-Z][^.\n]*)/gm, // Numbered sections
       /^([A-Z][A-Z\s]+:)/gm, // ALL CAPS sections
-      /^(Scope of Work|Materials|Labor|Equipment|Timeline|Cost Breakdown)/gmi,
+      /^(Scope of Work|Materials|Labor|Equipment|Timeline|Cost Breakdown)/gim,
     ];
 
     for (const pattern of sectionPatterns) {
@@ -356,13 +364,13 @@ export class IngestionAgent {
       while ((match = pattern.exec(text)) !== null) {
         const title = match[1].trim();
         const startIndex = match.index;
-        
+
         // Find the end of this section (next section or end of text)
         const nextMatch = pattern.exec(text);
         const endIndex = nextMatch ? nextMatch.index : text.length;
-        
+
         const content = text.slice(startIndex, endIndex).trim();
-        
+
         sections.push({
           title,
           content,
@@ -380,7 +388,7 @@ export class IngestionAgent {
    */
   private async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const { embedding } = await generateEmbedding({
+      const { embedding } = await embed({
         model: openai.embedding(EA_EMBEDDING_MODEL),
         value: text,
       });
@@ -403,7 +411,7 @@ export class IngestionAgent {
     for (let i = 0; i < requests.length; i += concurrency) {
       const batch = requests.slice(i, i + concurrency);
       const batchResults = await Promise.all(
-        batch.map(request => this.ingest(request))
+        batch.map((request) => this.ingest(request)),
       );
       results.push(...batchResults);
     }

@@ -4,10 +4,10 @@
 
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { checkDatabaseHealth } from "lib/gcp/db";
-import { gcsFileStorage } from "lib/gcp/storage";
-import { config } from "lib/config";
-import logger from "lib/logger";
+import { checkDatabaseHealth } from "@/lib/gcp/db";
+import { gcsFileStorage } from "@/lib/gcp/storage";
+import { config } from "@/lib/config";
+import logger from "@/lib/logger";
 
 // Health check interfaces
 interface HealthCheck {
@@ -69,7 +69,7 @@ async function checkGCS(): Promise<HealthCheck> {
     });
 
     // Try to download it back
-    const _downloadResult = await gcsFileStorage.download(uploadResult.key);
+    await gcsFileStorage.download(uploadResult.key);
 
     // Clean up the test file
     await gcsFileStorage.delete(uploadResult.key);
@@ -245,8 +245,6 @@ async function checkExternalServices(): Promise<HealthCheck[]> {
 
 // Main health check handler
 export async function GET(_request: NextRequest) {
-  const _startTime = Date.now();
-
   try {
     // Run all health checks in parallel
     const [

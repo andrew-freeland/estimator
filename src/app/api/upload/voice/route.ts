@@ -4,11 +4,10 @@
 
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "lib/auth";
-import { ingestionAgent } from "agents/ingestion_agent";
-import { gcsFileStorage } from "lib/gcp/storage";
-import logger from "lib/logger";
+import { getSession } from "@/lib/auth/auth-instance";
+import { ingestionAgent } from "@/agents/ingestion_agent";
+import { gcsFileStorage } from "@/lib/gcp/storage";
+import logger from "@/lib/logger";
 import { z } from "zod";
 
 // EA_ prefix for Estimator Assistant
@@ -33,7 +32,7 @@ const VoiceUploadSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -60,7 +59,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "Invalid request parameters",
-          details: validation.error.errors,
+          details: validation.error.issues,
         },
         { status: 400 },
       );
@@ -126,7 +125,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Store transcript in GCS
-    const transcriptBuffer = Buffer.from(transcriptionResult.text, "utf-8");
+    const transcriptBuffer = Buffer.from(
+      transcriptionResult.text || "",
+      "utf-8",
+    );
     const transcriptStorageResult = await gcsFileStorage.upload(
       transcriptBuffer,
       {
@@ -222,7 +224,7 @@ async function transcribeAudio(
   try {
     // Create FormData for Whisper API
     const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: mimeType });
+    const blob = new Blob([new Uint8Array(audioBuffer)], { type: mimeType });
     formData.append("file", blob, "audio.wav");
     formData.append("model", "whisper-1");
     formData.append("response_format", "verbose_json");
@@ -272,7 +274,7 @@ async function transcribeAudio(
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },

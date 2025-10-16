@@ -4,9 +4,9 @@
 
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { withSecurity } from "lib/security";
-import { vectorStoreService } from "vectorstore";
-import { logToolCall } from "lib/logs";
+import { withSecurity } from "@/lib/security";
+import { vectorStoreService } from "@/vectorstore";
+import { logToolCall } from "@/lib/logs";
 import { z } from "zod";
 
 // Request validation schema
@@ -24,10 +24,11 @@ export async function POST(request: NextRequest) {
     request,
     async (context) => {
       const startTime = Date.now();
+      let body: any = null;
 
       try {
         // Parse and validate request body
-        const body = await request.json();
+        body = await request.json();
         const validation = RetrieveRequestSchema.safeParse(body);
 
         if (!validation.success) {
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
             {
               success: false,
               error: "Invalid request parameters",
-              details: validation.error.errors,
+              details: validation.error.issues,
             },
             { status: 400 },
           );

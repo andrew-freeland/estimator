@@ -6,7 +6,7 @@ import "server-only";
 import { ingestionAgent } from "./ingestion_agent";
 import { ratesAgent } from "./rates_agent";
 import { explainerAgent } from "./explainer_agent";
-import logger from "lib/logger";
+import logger from "@/lib/logger";
 
 // EA_ prefix for Estimator Assistant
 const EA_ORCHESTRATOR_TIMEOUT = parseInt(
@@ -157,7 +157,7 @@ export class EstimatorOrchestrator {
       // Phase 1: Ingestion Agent
       logger.info("Phase 1: Running ingestion agent");
       results.ingestion = await this.executeAgent("ingestion", async () => {
-        const ingestionResults = [];
+        const ingestionResults: any[] = [];
 
         // Process input files if provided
         if (request.inputFiles) {

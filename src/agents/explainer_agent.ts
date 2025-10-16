@@ -4,12 +4,11 @@
 
 import "server-only";
 import { openai } from "@ai-sdk/openai";
-import { generateObject } from "ai";
+import { generateObject, generateText } from "ai";
 import { z } from "zod";
-import { vectorStore } from "lib/gcp/db";
-import { ingestionAgent } from "./ingestion_agent";
+import { vectorStore } from "@/lib/gcp/db";
 import { ratesAgent } from "./rates_agent";
-import logger from "lib/logger";
+import logger from "@/lib/logger";
 
 // EA_ prefix for Estimator Assistant
 const EA_EXPLAINER_MODEL = process.env.EA_EXPLAINER_MODEL || "gpt-4o";
@@ -385,21 +384,14 @@ Write a clear, professional narrative that:
 Use a professional but accessible tone. Be honest about limitations and uncertainty.
 `;
 
-      const response = await openai.chat.completions.create({
-        model: EA_EXPLAINER_MODEL,
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        max_tokens: 2000,
+      const response = await generateText({
+        model: openai(EA_EXPLAINER_MODEL),
+        prompt,
+        maxOutputTokens: 2000,
         temperature: 0.3,
       });
 
-      return (
-        response.choices[0]?.message?.content || "Unable to generate narrative"
-      );
+      return response.text || "Unable to generate narrative";
     } catch (error) {
       logger.error("Error generating narrative:", error);
       return "Error generating narrative explanation";
