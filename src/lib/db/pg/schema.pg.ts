@@ -12,6 +12,9 @@ import {
   unique,
   varchar,
   index,
+  integer,
+  decimal,
+  vector,
 } from "drizzle-orm/pg-core";
 import { isNotNull } from "drizzle-orm";
 import { DBWorkflow, DBEdge, DBNode } from "app-types/workflow";
@@ -374,3 +377,183 @@ export const ChatExportCommentTable = pgTable("chat_export_comment", {
 export type ArchiveEntity = typeof ArchiveTable.$inferSelect;
 export type ArchiveItemEntity = typeof ArchiveItemTable.$inferSelect;
 export type BookmarkEntity = typeof BookmarkTable.$inferSelect;
+
+// Estimator Assistant MCP Tables
+
+// Documents table for storing ingested content with embeddings
+export const DocumentsTable = pgTable(
+  "ea_documents",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    projectId: text("project_id").notNull(),
+    clientId: text("client_id").notNull(),
+    jobId: text("job_id"),
+    sourcePath: text("source_path").notNull(),
+    sourceType: varchar("source_type", {
+      enum: ["file", "transcript", "text"],
+    }).notNull(),
+    content: text("content").notNull(),
+    embedding: vector("embedding", { dimensions: 3072 }), // text-embedding-3-large dimensions
+    metadata: json("metadata").default({}),
+    revision: integer("revision").default(1).notNull(),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("ea_documents_client_job_idx").on(table.clientId, table.jobId),
+    index("ea_documents_source_idx").on(table.sourcePath, table.sourceType),
+    index("ea_documents_project_idx").on(table.projectId),
+  ],
+);
+
+// Jobs table for construction project information
+export const JobsTable = pgTable(
+  "ea_jobs",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    name: text("name").notNull(),
+    location: text("location"),
+    description: text("description"),
+    clientId: text("client_id").notNull(),
+    projectId: text("project_id").notNull(),
+    laborRate: decimal("labor_rate", { precision: 10, scale: 2 }),
+    materialCosts: json("material_costs").default({}),
+    estimatedCost: decimal("estimated_cost", { precision: 12, scale: 2 }),
+    actualCost: decimal("actual_cost", { precision: 12, scale: 2 }),
+    status: varchar("status", {
+      enum: ["planning", "active", "completed", "cancelled"],
+    })
+      .default("planning")
+      .notNull(),
+    startDate: timestamp("start_date"),
+    endDate: timestamp("end_date"),
+    lastUpdated: timestamp("last_updated")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("ea_jobs_client_idx").on(table.clientId),
+    index("ea_jobs_project_idx").on(table.projectId),
+    index("ea_jobs_status_idx").on(table.status),
+  ],
+);
+
+// Logs table for structured logging and audit trail
+export const LogsTable = pgTable(
+  "ea_logs",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    eventType: varchar("event_type", {
+      enum: [
+        "agent_execution",
+        "tool_call",
+        "embedding_generation",
+        "file_upload",
+        "transcription",
+        "estimate_generation",
+        "error",
+        "security_event",
+      ],
+    }).notNull(),
+    timestamp: timestamp("timestamp").notNull().default(sql`CURRENT_TIMESTAMP`),
+    clientId: text("client_id"),
+    userId: text("user_id"),
+    sessionId: text("session_id"),
+    projectId: text("project_id"),
+    jobId: text("job_id"),
+    payload: json("payload").notNull(),
+    severity: varchar("severity", {
+      enum: ["debug", "info", "warn", "error", "fatal"],
+    })
+      .default("info")
+      .notNull(),
+    source: text("source"), // Which component generated the log
+    duration: integer("duration"), // Duration in milliseconds
+    success: boolean("success"),
+  },
+  (table) => [
+    index("ea_logs_event_type_idx").on(table.eventType),
+    index("ea_logs_timestamp_idx").on(table.timestamp),
+    index("ea_logs_client_idx").on(table.clientId),
+    index("ea_logs_user_idx").on(table.userId),
+    index("ea_logs_session_idx").on(table.sessionId),
+    index("ea_logs_severity_idx").on(table.severity),
+  ],
+);
+
+// Estimates table for storing generated estimates
+export const EstimatesTable = pgTable(
+  "ea_estimates",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    projectId: text("project_id").notNull(),
+    clientId: text("client_id").notNull(),
+    jobId: text("job_id"),
+    sessionId: text("session_id").notNull(),
+    userId: text("user_id").notNull(),
+    estimate: decimal("estimate", { precision: 12, scale: 2 }).notNull(),
+    confidence: decimal("confidence", { precision: 3, scale: 2 }).notNull(), // 0.00 to 1.00
+    reasoning: json("reasoning").notNull().$type<string[]>(),
+    sources: json("sources").notNull().$type<string[]>(),
+    breakdown: json("breakdown").notNull(), // Detailed cost breakdown
+    uncertainty: json("uncertainty").notNull(), // Uncertainty analysis
+    narrative: text("narrative").notNull(), // Human-readable explanation
+    metadata: json("metadata").default({}),
+    createdAt: timestamp("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("ea_estimates_project_idx").on(table.projectId),
+    index("ea_estimates_client_idx").on(table.clientId),
+    index("ea_estimates_session_idx").on(table.sessionId),
+    index("ea_estimates_user_idx").on(table.userId),
+    index("ea_estimates_created_idx").on(table.createdAt),
+  ],
+);
+
+// Tool usage tracking table
+export const ToolUsageTable = pgTable(
+  "ea_tool_usage",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    toolName: text("tool_name").notNull(),
+    clientId: text("client_id").notNull(),
+    userId: text("user_id").notNull(),
+    sessionId: text("session_id").notNull(),
+    projectId: text("project_id"),
+    jobId: text("job_id"),
+    success: boolean("success").notNull(),
+    duration: integer("duration").notNull(), // Duration in milliseconds
+    error: text("error"),
+    requestPayload: json("request_payload"),
+    responsePayload: json("response_payload"),
+    timestamp: timestamp("timestamp").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => [
+    index("ea_tool_usage_tool_idx").on(table.toolName),
+    index("ea_tool_usage_client_idx").on(table.clientId),
+    index("ea_tool_usage_user_idx").on(table.userId),
+    index("ea_tool_usage_timestamp_idx").on(table.timestamp),
+  ],
+);
+
+// Export types for the new tables
+export type DocumentsEntity = typeof DocumentsTable.$inferSelect;
+export type JobsEntity = typeof JobsTable.$inferSelect;
+export type LogsEntity = typeof LogsTable.$inferSelect;
+export type EstimatesEntity = typeof EstimatesTable.$inferSelect;
+export type ToolUsageEntity = typeof ToolUsageTable.$inferSelect;

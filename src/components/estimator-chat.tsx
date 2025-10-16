@@ -8,12 +8,12 @@ import { useChat } from "ai/react";
 import { AssistantRuntimeProvider, Thread } from "@assistant-ui/react";
 import { useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { cn } from "lib/utils";
-import { ingestionAgent } from "agents/ingestion_agent";
-import { ratesAgent } from "agents/rates_agent";
-import { explainerAgent } from "agents/explainer_agent";
-import { vectorStoreService } from "vectorstore";
-import { config } from "lib/config";
+import { cn } from "@/lib/utils";
+import { ingestionAgent } from "@/agents/ingestion_agent";
+import { ratesAgent } from "@/agents/rates_agent";
+import { explainerAgent } from "@/agents/explainer_agent";
+import { vectorStoreService } from "@/vectorstore";
+import { config } from "@/lib/config";
 
 // Types for estimator-specific chat
 interface EstimatorChatProps {
@@ -53,7 +53,7 @@ const createEstimatorRuntime = () => {
 
         // Route to appropriate agent based on message content
         const response = await this.routeToAgent(message);
-        
+
         return {
           id: `msg_${Date.now()}`,
           role: "assistant" as const,
@@ -65,7 +65,8 @@ const createEstimatorRuntime = () => {
         return {
           id: `error_${Date.now()}`,
           role: "assistant" as const,
-          content: "I apologize, but I encountered an error processing your request. Please try again.",
+          content:
+            "I apologize, but I encountered an error processing your request. Please try again.",
           metadata: { error: true },
         };
       }
@@ -78,7 +79,7 @@ const createEstimatorRuntime = () => {
           // Download and process the file
           const response = await fetch(attachment.url);
           const buffer = await response.arrayBuffer();
-          
+
           // Use ingestion agent to process the file
           await ingestionAgent.ingest({
             clientId: metadata.clientId || "default",
@@ -94,32 +95,43 @@ const createEstimatorRuntime = () => {
             },
           });
         } catch (error) {
-          console.error(`Error processing attachment ${attachment.name}:`, error);
+          console.error(
+            `Error processing attachment ${attachment.name}:`,
+            error,
+          );
         }
       }
     },
 
     // Get source type from MIME type
-    getSourceType(mimeType: string): 'file' | 'transcript' | 'text' {
-      if (mimeType.startsWith('audio/')) return 'transcript';
-      if (mimeType.startsWith('text/')) return 'text';
-      return 'file';
+    getSourceType(mimeType: string): "file" | "transcript" | "text" {
+      if (mimeType.startsWith("audio/")) return "transcript";
+      if (mimeType.startsWith("text/")) return "text";
+      return "file";
     },
 
     // Route message to appropriate agent
     async routeToAgent(message: EstimatorMessage) {
       const content = message.content.toLowerCase();
-      
+
       // Check if this is a request for rates/costs
-      if (content.includes('rate') || content.includes('cost') || content.includes('price')) {
+      if (
+        content.includes("rate") ||
+        content.includes("cost") ||
+        content.includes("price")
+      ) {
         return this.handleRatesRequest(message);
       }
-      
+
       // Check if this is a request for estimate explanation
-      if (content.includes('explain') || content.includes('estimate') || content.includes('breakdown')) {
+      if (
+        content.includes("explain") ||
+        content.includes("estimate") ||
+        content.includes("breakdown")
+      ) {
         return this.handleEstimateRequest(message);
       }
-      
+
       // Default to general assistance
       return this.handleGeneralRequest(message);
     },
@@ -144,7 +156,8 @@ const createEstimatorRuntime = () => {
         };
       } else {
         return {
-          content: "I encountered an error retrieving rate information. Please try again or provide more specific details.",
+          content:
+            "I encountered an error retrieving rate information. Please try again or provide more specific details.",
           metadata: { error: true },
         };
       }
@@ -161,7 +174,8 @@ const createEstimatorRuntime = () => {
 
       if (estimateData.success) {
         return {
-          content: estimateData.data?.narrative || "Estimate generated successfully.",
+          content:
+            estimateData.data?.narrative || "Estimate generated successfully.",
           metadata: {
             type: "estimate",
             data: estimateData.data,
@@ -170,7 +184,8 @@ const createEstimatorRuntime = () => {
         };
       } else {
         return {
-          content: "I encountered an error generating the estimate. Please provide more details about your project.",
+          content:
+            "I encountered an error generating the estimate. Please provide more details about your project.",
           metadata: { error: true },
         };
       }
@@ -188,20 +203,21 @@ const createEstimatorRuntime = () => {
 
       if (searchResults.length > 0) {
         const relevantContent = searchResults
-          .map(result => result.content)
-          .join('\n\n');
-        
+          .map((result) => result.content)
+          .join("\n\n");
+
         return {
           content: `Based on your project data, here's what I found:\n\n${relevantContent}\n\nWould you like me to help you with a specific estimate or cost breakdown?`,
           metadata: {
             type: "general",
-            sources: searchResults.map(r => r.source),
+            sources: searchResults.map((r) => r.source),
             confidence: 0.7,
           },
         };
       } else {
         return {
-          content: "I'd be happy to help you with construction estimates! Please share your project details, upload any relevant documents, or ask me about specific costs, materials, or timelines.",
+          content:
+            "I'd be happy to help you with construction estimates! Please share your project details, upload any relevant documents, or ask me about specific costs, materials, or timelines.",
           metadata: {
             type: "general",
             confidence: 0.5,
@@ -213,24 +229,30 @@ const createEstimatorRuntime = () => {
     // Extract location from message content
     extractLocation(content: string): string | undefined {
       // Simple location extraction - could be enhanced with NLP
-      const locationMatch = content.match(/(?:in|at|near|location:?)\s+([^,.\n]+)/i);
+      const locationMatch = content.match(
+        /(?:in|at|near|location:?)\s+([^,.\n]+)/i,
+      );
       return locationMatch ? locationMatch[1].trim() : undefined;
     },
 
     // Extract categories from message content
     extractCategories(content: string): string[] {
       const categories = [];
-      if (content.includes('labor') || content.includes('worker')) categories.push('Labor');
-      if (content.includes('material') || content.includes('supply')) categories.push('Materials');
-      if (content.includes('equipment') || content.includes('machine')) categories.push('Equipment');
-      if (content.includes('overhead') || content.includes('admin')) categories.push('Overhead');
+      if (content.includes("labor") || content.includes("worker"))
+        categories.push("Labor");
+      if (content.includes("material") || content.includes("supply"))
+        categories.push("Materials");
+      if (content.includes("equipment") || content.includes("machine"))
+        categories.push("Equipment");
+      if (content.includes("overhead") || content.includes("admin"))
+        categories.push("Overhead");
       return categories;
     },
 
     // Format rates response
     formatRatesResponse(data: any): string {
       let response = "Here's the rate information I found:\n\n";
-      
+
       if (data.laborRates && data.laborRates.length > 0) {
         response += "**Labor Rates:**\n";
         data.laborRates.forEach((rate: any) => {
@@ -238,7 +260,7 @@ const createEstimatorRuntime = () => {
         });
         response += "\n";
       }
-      
+
       if (data.materialCosts && data.materialCosts.length > 0) {
         response += "**Material Costs:**\n";
         data.materialCosts.forEach((cost: any) => {
@@ -246,37 +268,31 @@ const createEstimatorRuntime = () => {
         });
         response += "\n";
       }
-      
+
       if (data.locationModifiers) {
         response += `**Location Modifiers:**\n`;
         response += `- Total modifier: ${(data.locationModifiers.modifiers.total * 100).toFixed(1)}%\n`;
         response += `- Region: ${data.locationModifiers.region}\n\n`;
       }
-      
-      response += "Would you like me to help you create a detailed estimate based on these rates?";
-      
+
+      response +=
+        "Would you like me to help you create a detailed estimate based on these rates?";
+
       return response;
     },
   };
 };
 
-export default function EstimatorChat({ 
-  threadId, 
-  initialMessages = [], 
-  className 
+export default function EstimatorChat({
+  threadId,
+  initialMessages = [],
+  className,
 }: EstimatorChatProps) {
-  const t = useTranslations();
+  const _t = useTranslations();
   const runtime = useMemo(() => createEstimatorRuntime(), []);
 
   // Initialize chat with AI SDK
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    error,
-  } = useChat({
+  const { input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: "/api/chat/estimator",
     initialMessages,
     body: {
@@ -290,30 +306,33 @@ export default function EstimatorChat({
         <Thread
           className="flex-1 overflow-hidden"
           // Custom message rendering
-          renderMessage={({ message, isLatest }) => (
-            <div className={cn(
-              "p-4 rounded-lg mb-4",
-              message.role === "user" 
-                ? "bg-blue-50 ml-auto max-w-[80%]" 
-                : "bg-gray-50 mr-auto max-w-[80%]"
-            )}>
+          renderMessage={({ message }) => (
+            <div
+              className={cn(
+                "p-4 rounded-lg mb-4",
+                message.role === "user"
+                  ? "bg-blue-50 ml-auto max-w-[80%]"
+                  : "bg-gray-50 mr-auto max-w-[80%]",
+              )}
+            >
               <div className="font-medium text-sm mb-1">
                 {message.role === "user" ? "You" : "Estimator Assistant"}
               </div>
-              <div className="text-gray-800">
-                {message.content}
-              </div>
+              <div className="text-gray-800">{message.content}</div>
               {message.metadata && (
                 <div className="mt-2 text-xs text-gray-500">
                   {message.metadata.confidence && (
-                    <span>Confidence: {(message.metadata.confidence * 100).toFixed(1)}%</span>
+                    <span>
+                      Confidence:{" "}
+                      {(message.metadata.confidence * 100).toFixed(1)}%
+                    </span>
                   )}
                 </div>
               )}
             </div>
           )}
         />
-        
+
         {/* Input area */}
         <div className="border-t p-4">
           <form onSubmit={handleSubmit} className="flex gap-2">
@@ -332,7 +351,7 @@ export default function EstimatorChat({
               {isLoading ? "..." : "Send"}
             </button>
           </form>
-          
+
           {error && (
             <div className="mt-2 text-sm text-red-600">
               Error: {error.message}

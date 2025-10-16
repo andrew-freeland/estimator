@@ -5,18 +5,24 @@
 "use client";
 
 import { useState } from "react";
-import EstimatorChat from "components/estimator-chat";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "ui/card";
-import { Button } from "ui/button";
-import { Badge } from "ui/badge";
-import { 
-  Calculator, 
-  FileText, 
-  MapPin, 
-  Clock, 
+import EstimatorChat from "@/components/estimator-chat";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Calculator,
+  FileText,
+  MapPin,
+  Clock,
   TrendingUp,
   Upload,
-  MessageSquare
+  MessageSquare,
 } from "lucide-react";
 
 export default function EstimatorPage() {
@@ -26,32 +32,38 @@ export default function EstimatorPage() {
     {
       icon: Calculator,
       title: "Cost Estimation",
-      description: "Get detailed cost breakdowns for labor, materials, and equipment with confidence levels and assumptions.",
+      description:
+        "Get detailed cost breakdowns for labor, materials, and equipment with confidence levels and assumptions.",
     },
     {
       icon: FileText,
       title: "Document Analysis",
-      description: "Upload and analyze construction plans, specifications, and project documents automatically.",
+      description:
+        "Upload and analyze construction plans, specifications, and project documents automatically.",
     },
     {
       icon: MapPin,
       title: "Location Intelligence",
-      description: "Account for regional cost differences, travel expenses, and local market conditions.",
+      description:
+        "Account for regional cost differences, travel expenses, and local market conditions.",
     },
     {
       icon: Clock,
       title: "Timeline Planning",
-      description: "Estimate project duration and create realistic schedules based on historical data.",
+      description:
+        "Estimate project duration and create realistic schedules based on historical data.",
     },
     {
       icon: TrendingUp,
       title: "Market Rates",
-      description: "Access current labor rates, material costs, and equipment pricing from multiple sources.",
+      description:
+        "Access current labor rates, material costs, and equipment pricing from multiple sources.",
     },
     {
       icon: Upload,
       title: "Voice Notes",
-      description: "Record voice notes and get automatic transcription for quick project documentation.",
+      description:
+        "Record voice notes and get automatic transcription for quick project documentation.",
     },
   ];
 
@@ -60,7 +72,9 @@ export default function EstimatorPage() {
       {/* Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900">Estimator Assistant</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Estimator Assistant
+          </h1>
           <p className="text-sm text-gray-600 mt-1">
             AI-powered construction cost estimation
           </p>
@@ -90,15 +104,27 @@ export default function EstimatorPage() {
             <div className="mt-6 space-y-4">
               <h3 className="font-semibold text-gray-900">Quick Actions</h3>
               <div className="space-y-2">
-                <Button variant="outline" size="sm" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                >
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Documents
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                >
                   <Calculator className="w-4 h-4 mr-2" />
                   New Estimate
                 </Button>
-                <Button variant="outline" size="sm" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                >
                   <TrendingUp className="w-4 h-4 mr-2" />
                   View Rates
                 </Button>
@@ -135,19 +161,25 @@ export default function EstimatorPage() {
                   Estimator Assistant Features
                 </h2>
                 <p className="text-lg text-gray-600">
-                  Transform your construction estimating process with AI-powered tools and insights.
+                  Transform your construction estimating process with AI-powered
+                  tools and insights.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {features.map((feature, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
+                  <Card
+                    key={index}
+                    className="hover:shadow-md transition-shadow"
+                  >
                     <CardHeader>
                       <div className="flex items-center space-x-3">
                         <div className="p-2 bg-blue-100 rounded-lg">
                           <feature.icon className="w-5 h-5 text-blue-600" />
                         </div>
-                        <CardTitle className="text-lg">{feature.title}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {feature.title}
+                        </CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -163,7 +195,7 @@ export default function EstimatorPage() {
                 <CardHeader>
                   <CardTitle>Getting Started</CardTitle>
                   <CardDescription>
-                    Here's how to use the Estimator Assistant effectively
+                    Here&apos;s how to use the Estimator Assistant effectively
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -174,7 +206,8 @@ export default function EstimatorPage() {
                     <div>
                       <h4 className="font-semibold">Upload Your Documents</h4>
                       <p className="text-sm text-gray-600">
-                        Upload construction plans, specifications, or any project documents for analysis.
+                        Upload construction plans, specifications, or any
+                        project documents for analysis.
                       </p>
                     </div>
                   </div>
@@ -185,7 +218,8 @@ export default function EstimatorPage() {
                     <div>
                       <h4 className="font-semibold">Describe Your Project</h4>
                       <p className="text-sm text-gray-600">
-                        Tell us about your project scope, location, timeline, and any specific requirements.
+                        Tell us about your project scope, location, timeline,
+                        and any specific requirements.
                       </p>
                     </div>
                   </div>
@@ -196,7 +230,8 @@ export default function EstimatorPage() {
                     <div>
                       <h4 className="font-semibold">Get Your Estimate</h4>
                       <p className="text-sm text-gray-600">
-                        Receive detailed cost breakdowns with confidence levels, assumptions, and recommendations.
+                        Receive detailed cost breakdowns with confidence levels,
+                        assumptions, and recommendations.
                       </p>
                     </div>
                   </div>

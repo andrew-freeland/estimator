@@ -4,17 +4,17 @@
 
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
-import { ingestionAgent } from "agents/ingestion_agent";
-import { ratesAgent } from "agents/rates_agent";
-import { explainerAgent } from "agents/explainer_agent";
-import { vectorStoreService } from "vectorstore";
-import { config } from "lib/config";
-import logger from "lib/logger";
+import { ingestionAgent } from "@/agents/ingestion_agent";
+import { ratesAgent } from "@/agents/rates_agent";
+import { explainerAgent } from "@/agents/explainer_agent";
+import { vectorStoreService } from "@/vectorstore";
+import { config } from "@/lib/config";
+import logger from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
     const { messages, threadId } = await request.json();
-    
+
     if (!messages || !Array.isArray(messages)) {
       return new Response("Invalid messages format", { status: 400 });
     }
@@ -81,24 +81,35 @@ async function processEstimatorMessage({
   message,
   clientId,
   jobId,
-  threadId,
   messageHistory,
 }: ProcessMessageParams): Promise<string> {
   const content = message.toLowerCase();
 
   try {
     // Check if this is a rates/cost request
-    if (content.includes('rate') || content.includes('cost') || content.includes('price')) {
+    if (
+      content.includes("rate") ||
+      content.includes("cost") ||
+      content.includes("price")
+    ) {
       return await handleRatesRequest(message, clientId, jobId);
     }
 
     // Check if this is an estimate explanation request
-    if (content.includes('explain') || content.includes('estimate') || content.includes('breakdown')) {
+    if (
+      content.includes("explain") ||
+      content.includes("estimate") ||
+      content.includes("breakdown")
+    ) {
       return await handleEstimateRequest(message, clientId, jobId);
     }
 
     // Check if this is a file upload or document analysis request
-    if (content.includes('upload') || content.includes('document') || content.includes('file')) {
+    if (
+      content.includes("upload") ||
+      content.includes("document") ||
+      content.includes("file")
+    ) {
       return await handleFileRequest(message, clientId, jobId);
     }
 
@@ -110,7 +121,11 @@ async function processEstimatorMessage({
   }
 }
 
-async function handleRatesRequest(message: string, clientId: string, jobId?: string): Promise<string> {
+async function handleRatesRequest(
+  message: string,
+  clientId: string,
+  jobId?: string,
+): Promise<string> {
   try {
     const ratesData = await ratesAgent.getRates({
       clientId,
@@ -121,7 +136,7 @@ async function handleRatesRequest(message: string, clientId: string, jobId?: str
 
     if (ratesData.success && ratesData.data) {
       let response = "Here's the rate information I found:\n\n";
-      
+
       if (ratesData.data.laborRates && ratesData.data.laborRates.length > 0) {
         response += "**Labor Rates:**\n";
         ratesData.data.laborRates.forEach((rate: any) => {
@@ -133,8 +148,11 @@ async function handleRatesRequest(message: string, clientId: string, jobId?: str
         });
         response += "\n";
       }
-      
-      if (ratesData.data.materialCosts && ratesData.data.materialCosts.length > 0) {
+
+      if (
+        ratesData.data.materialCosts &&
+        ratesData.data.materialCosts.length > 0
+      ) {
         response += "**Material Costs:**\n";
         ratesData.data.materialCosts.forEach((cost: any) => {
           response += `- ${cost.item}: $${cost.unitPrice}/${cost.unit}`;
@@ -145,15 +163,16 @@ async function handleRatesRequest(message: string, clientId: string, jobId?: str
         });
         response += "\n";
       }
-      
+
       if (ratesData.data.locationModifiers) {
         response += `**Location Modifiers:**\n`;
         response += `- Total modifier: ${(ratesData.data.locationModifiers.modifiers.total * 100).toFixed(1)}%\n`;
         response += `- Region: ${ratesData.data.locationModifiers.region}\n\n`;
       }
-      
-      response += "Would you like me to help you create a detailed estimate based on these rates?";
-      
+
+      response +=
+        "Would you like me to help you create a detailed estimate based on these rates?";
+
       return response;
     } else {
       return "I couldn't find specific rate information for your request. Please provide more details about the type of work, location, or specific materials you're interested in.";
@@ -164,7 +183,11 @@ async function handleRatesRequest(message: string, clientId: string, jobId?: str
   }
 }
 
-async function handleEstimateRequest(message: string, clientId: string, jobId?: string): Promise<string> {
+async function handleEstimateRequest(
+  message: string,
+  clientId: string,
+  jobId?: string,
+): Promise<string> {
   try {
     const estimateData = await explainerAgent.explainEstimate({
       clientId,
@@ -175,32 +198,32 @@ async function handleEstimateRequest(message: string, clientId: string, jobId?: 
 
     if (estimateData.success && estimateData.data) {
       const { breakdown, uncertainty, narrative } = estimateData.data;
-      
+
       let response = `**Project Estimate Breakdown**\n\n`;
       response += `Total Estimated Cost: $${breakdown.totalCost.toLocaleString()}\n`;
       response += `Overall Confidence: ${(breakdown.overallConfidence * 100).toFixed(1)}%\n\n`;
-      
+
       response += `**Cost Categories:**\n`;
       breakdown.categories.forEach((category: any) => {
         response += `- ${category.name}: $${category.cost.toLocaleString()} (${(category.confidence * 100).toFixed(1)}% confidence)\n`;
       });
-      
+
       if (uncertainty.riskFactors && uncertainty.riskFactors.length > 0) {
         response += `\n**Risk Factors:**\n`;
         uncertainty.riskFactors.forEach((risk: any) => {
           response += `- ${risk.factor}: ${risk.impact} impact (${(risk.probability * 100).toFixed(1)}% probability)\n`;
         });
       }
-      
+
       if (uncertainty.missingData && uncertainty.missingData.length > 0) {
         response += `\n**Missing Information:**\n`;
         uncertainty.missingData.forEach((item: string) => {
           response += `- ${item}\n`;
         });
       }
-      
+
       response += `\n**Detailed Analysis:**\n${narrative}`;
-      
+
       return response;
     } else {
       return "I couldn't generate a detailed estimate. Please provide more information about your project, including scope, location, and any specific requirements.";
@@ -211,7 +234,11 @@ async function handleEstimateRequest(message: string, clientId: string, jobId?: 
   }
 }
 
-async function handleFileRequest(message: string, clientId: string, jobId?: string): Promise<string> {
+async function handleFileRequest(
+  _message: string,
+  clientId: string,
+  jobId?: string,
+): Promise<string> {
   try {
     // Search for recently uploaded files in vector store
     const searchResults = await vectorStoreService.search({
@@ -226,9 +253,10 @@ async function handleFileRequest(message: string, clientId: string, jobId?: stri
       searchResults.forEach((result, index) => {
         response += `${index + 1}. ${result.source} (${(result.similarity * 100).toFixed(1)}% relevance)\n`;
       });
-      
-      response += "\nI can analyze these documents to help with your estimate. What specific information would you like me to extract or analyze?";
-      
+
+      response +=
+        "\nI can analyze these documents to help with your estimate. What specific information would you like me to extract or analyze?";
+
       return response;
     } else {
       return "I don't see any uploaded documents yet. You can upload project plans, specifications, or other relevant files, and I'll analyze them to help with your construction estimate.";
@@ -240,10 +268,10 @@ async function handleFileRequest(message: string, clientId: string, jobId?: stri
 }
 
 async function handleGeneralRequest(
-  message: string, 
-  clientId: string, 
-  jobId?: string, 
-  messageHistory: any[] = []
+  message: string,
+  clientId: string,
+  jobId?: string,
+  _messageHistory: any[] = [],
 ): Promise<string> {
   try {
     // Search for relevant information in vector store
@@ -256,9 +284,9 @@ async function handleGeneralRequest(
 
     if (searchResults.length > 0) {
       const relevantContent = searchResults
-        .map(result => result.content.substring(0, 200) + "...")
-        .join('\n\n');
-      
+        .map((result) => result.content.substring(0, 200) + "...")
+        .join("\n\n");
+
       return `Based on your project data, here's what I found:\n\n${relevantContent}\n\nWould you like me to help you with a specific estimate, cost breakdown, or analysis?`;
     } else {
       return `I'd be happy to help you with construction estimates! Here's what I can assist you with:
@@ -279,15 +307,21 @@ Please share your project details, upload any relevant documents, or ask me abou
 
 // Helper functions
 function extractLocation(content: string): string | undefined {
-  const locationMatch = content.match(/(?:in|at|near|location:?)\s+([^,.\n]+)/i);
+  const locationMatch = content.match(
+    /(?:in|at|near|location:?)\s+([^,.\n]+)/i,
+  );
   return locationMatch ? locationMatch[1].trim() : undefined;
 }
 
 function extractCategories(content: string): string[] {
   const categories = [];
-  if (content.includes('labor') || content.includes('worker')) categories.push('Labor');
-  if (content.includes('material') || content.includes('supply')) categories.push('Materials');
-  if (content.includes('equipment') || content.includes('machine')) categories.push('Equipment');
-  if (content.includes('overhead') || content.includes('admin')) categories.push('Overhead');
+  if (content.includes("labor") || content.includes("worker"))
+    categories.push("Labor");
+  if (content.includes("material") || content.includes("supply"))
+    categories.push("Materials");
+  if (content.includes("equipment") || content.includes("machine"))
+    categories.push("Equipment");
+  if (content.includes("overhead") || content.includes("admin"))
+    categories.push("Overhead");
   return categories;
 }

@@ -18,6 +18,9 @@ export interface FileMetadata {
 export interface UploadOptions {
   filename?: string;
   contentType?: string;
+  maxSize?: number; // Maximum file size in bytes
+  allowedTypes?: string[]; // Allowed MIME types
+  redactPII?: boolean; // Whether to redact PII from text content (default: true)
 }
 
 export interface UploadResult {

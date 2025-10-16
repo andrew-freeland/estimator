@@ -19,6 +19,28 @@ import {
 import { generateUUID } from "lib/utils";
 import logger from "lib/logger";
 
+// PII redaction utilities
+const PII_PATTERNS = [
+  // Phone numbers
+  /(\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/g,
+  // Email addresses
+  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+  // SSN (basic pattern)
+  /\b\d{3}-?\d{2}-?\d{4}\b/g,
+  // Credit card numbers (basic pattern)
+  /\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g,
+];
+
+function redactPII(text: string): string {
+  let redacted = text;
+
+  PII_PATTERNS.forEach((pattern) => {
+    redacted = redacted.replace(pattern, "[REDACTED]");
+  });
+
+  return redacted;
+}
+
 // EA_ prefix for Estimator Assistant
 const EA_GCS_BUCKET_NAME = process.env.EA_GCS_BUCKET_NAME;
 const EA_GCP_PROJECT_ID = process.env.EA_GCP_PROJECT_ID;
@@ -65,7 +87,9 @@ const getFileInfo = async (key: string) => {
     return {
       contentType: metadata.contentType || "application/octet-stream",
       size: parseInt(metadata.size || "0"),
-      uploadedAt: metadata.timeCreated ? new Date(metadata.timeCreated) : undefined,
+      uploadedAt: metadata.timeCreated
+        ? new Date(metadata.timeCreated)
+        : undefined,
     };
   } catch (error: unknown) {
     if (error instanceof Error && error.message.includes("404")) {
@@ -94,9 +118,40 @@ export const createGCSFileStorage = (): FileStorage => {
       const filename = options.filename ?? "file";
       const pathname = buildPathname(filename);
 
+      // Validate file size (max 100MB for general files)
+      const maxSize = options.maxSize || 100 * 1024 * 1024; // 100MB default
+      if (buffer.byteLength > maxSize) {
+        throw new Error(
+          `File too large. Maximum size is ${maxSize / 1024 / 1024}MB`,
+        );
+      }
+
+      // Validate MIME type if provided
+      if (options.allowedTypes && options.contentType) {
+        if (!options.allowedTypes.includes(options.contentType)) {
+          throw new Error(
+            `File type not allowed. Allowed types: ${options.allowedTypes.join(", ")}`,
+          );
+        }
+      }
+
+      // Redact PII from text content if it's a text file
+      let processedBuffer = buffer;
+      if (
+        options.contentType?.startsWith("text/") &&
+        options.redactPII !== false
+      ) {
+        const text = buffer.toString("utf-8");
+        const redactedText = redactPII(text);
+        if (redactedText !== text) {
+          logger.info(`PII redacted from file ${filename}`);
+          processedBuffer = Buffer.from(redactedText, "utf-8");
+        }
+      }
+
       const file = bucket.file(pathname);
-      
-      await file.save(buffer, {
+
+      await file.save(processedBuffer, {
         metadata: {
           contentType: options.contentType || "application/octet-stream",
         },
@@ -107,7 +162,7 @@ export const createGCSFileStorage = (): FileStorage => {
         key: pathname,
         filename: path.posix.basename(pathname),
         contentType: options.contentType || "application/octet-stream",
-        size: buffer.byteLength,
+        size: processedBuffer.byteLength,
         uploadedAt: new Date(),
       };
 
@@ -125,9 +180,9 @@ export const createGCSFileStorage = (): FileStorage => {
       // GCS signed URL generation for direct client uploads
       const filename = `temp-${generateUUID()}`;
       const pathname = buildPathname(filename);
-      
+
       const file = bucket.file(pathname);
-      
+
       const [signedUrl] = await file.getSignedUrl({
         version: "v4",
         action: "write",

@@ -16,22 +16,26 @@ const EA_EXPLAINER_MODEL = process.env.EA_EXPLAINER_MODEL || "gpt-4o";
 
 // Schemas for structured output
 const EstimateBreakdownSchema = z.object({
-  categories: z.array(z.object({
-    name: z.string(),
-    description: z.string(),
-    cost: z.number(),
-    confidence: z.number().min(0).max(1),
-    assumptions: z.array(z.string()),
-    dataSources: z.array(z.string()),
-  })),
+  categories: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      cost: z.number(),
+      confidence: z.number().min(0).max(1),
+      assumptions: z.array(z.string()),
+      dataSources: z.array(z.string()),
+    }),
+  ),
   totalCost: z.number(),
   overallConfidence: z.number().min(0).max(1),
-  riskFactors: z.array(z.object({
-    factor: z.string(),
-    impact: z.enum(["low", "medium", "high"]),
-    probability: z.number().min(0).max(1),
-    mitigation: z.string(),
-  })),
+  riskFactors: z.array(
+    z.object({
+      factor: z.string(),
+      impact: z.enum(["low", "medium", "high"]),
+      probability: z.number().min(0).max(1),
+      mitigation: z.string(),
+    }),
+  ),
   recommendations: z.array(z.string()),
 });
 
@@ -40,11 +44,13 @@ const UncertaintyAnalysisSchema = z.object({
   mediumConfidence: z.array(z.string()),
   lowConfidence: z.array(z.string()),
   missingData: z.array(z.string()),
-  alternativeScenarios: z.array(z.object({
-    scenario: z.string(),
-    cost: z.number(),
-    probability: z.number().min(0).max(1),
-  })),
+  alternativeScenarios: z.array(
+    z.object({
+      scenario: z.string(),
+      cost: z.number(),
+      probability: z.number().min(0).max(1),
+    }),
+  ),
 });
 
 // Types for estimate explanation
@@ -61,10 +67,14 @@ interface EstimateRequest {
 interface EstimateResult {
   success: boolean;
   data?: {
+    estimate: number;
+    confidence: number;
+    reasoning: string[];
+    sources: string[];
     breakdown: z.infer<typeof EstimateBreakdownSchema>;
     uncertainty: z.infer<typeof UncertaintyAnalysisSchema>;
     narrative: string;
-    sources: Array<{
+    sourceDetails: Array<{
       type: string;
       content: string;
       relevance: number;
@@ -91,7 +101,9 @@ export class ExplainerAgent {
    */
   async explainEstimate(request: EstimateRequest): Promise<EstimateResult> {
     try {
-      logger.info(`Generating estimate explanation for client ${request.clientId}`);
+      logger.info(
+        `Generating estimate explanation for client ${request.clientId}`,
+      );
 
       // Gather relevant data
       const [relevantData, ratesData] = await Promise.all([
@@ -104,21 +116,47 @@ export class ExplainerAgent {
       ]);
 
       // Generate structured estimate breakdown
-      const breakdown = await this.generateEstimateBreakdown(request, relevantData, ratesData);
+      const breakdown = await this.generateEstimateBreakdown(
+        request,
+        relevantData,
+        ratesData,
+      );
 
       // Analyze uncertainty
-      const uncertainty = await this.analyzeUncertainty(request, relevantData, ratesData);
+      const uncertainty = await this.analyzeUncertainty(
+        request,
+        relevantData,
+        ratesData,
+      );
 
       // Generate narrative explanation
-      const narrative = await this.generateNarrative(request, breakdown, uncertainty, relevantData);
+      const narrative = await this.generateNarrative(
+        request,
+        breakdown,
+        uncertainty,
+        relevantData,
+      );
+
+      // Extract final estimate and confidence
+      const estimate = breakdown.totalCost;
+      const confidence = breakdown.overallConfidence;
+      const reasoning = breakdown.categories.map(
+        (cat) =>
+          `${cat.name}: $${cat.cost.toLocaleString()} (${(cat.confidence * 100).toFixed(1)}% confidence)`,
+      );
+      const sources = relevantData.map((source) => source.source);
 
       return {
         success: true,
         data: {
+          estimate,
+          confidence,
+          reasoning,
+          sources,
           breakdown,
           uncertainty,
           narrative,
-          sources: relevantData,
+          sourceDetails: relevantData,
         },
       };
     } catch (error) {
@@ -133,12 +171,14 @@ export class ExplainerAgent {
   /**
    * Gather relevant data from vector store and external sources
    */
-  private async gatherRelevantData(request: EstimateRequest): Promise<Array<{
-    type: string;
-    content: string;
-    relevance: number;
-    source: string;
-  }>> {
+  private async gatherRelevantData(request: EstimateRequest): Promise<
+    Array<{
+      type: string;
+      content: string;
+      relevance: number;
+      source: string;
+    }>
+  > {
     const sources: Array<{
       type: string;
       content: string;
@@ -187,8 +227,13 @@ export class ExplainerAgent {
    */
   private async generateEstimateBreakdown(
     request: EstimateRequest,
-    relevantData: Array<{ type: string; content: string; relevance: number; source: string }>,
-    ratesData: any
+    relevantData: Array<{
+      type: string;
+      content: string;
+      relevance: number;
+      source: string;
+    }>,
+    ratesData: any,
   ): Promise<z.infer<typeof EstimateBreakdownSchema>> {
     try {
       const prompt = `
@@ -201,7 +246,7 @@ Scope: ${request.scope?.join(", ") || "Not specified"}
 Constraints: ${request.constraints?.join(", ") || "None specified"}
 
 Available Data Sources:
-${relevantData.map(source => `- ${source.type}: ${source.content.substring(0, 200)}... (relevance: ${source.relevance.toFixed(2)})`).join("\n")}
+${relevantData.map((source) => `- ${source.type}: ${source.content.substring(0, 200)}... (relevance: ${source.relevance.toFixed(2)})`).join("\n")}
 
 Available Rates:
 Labor Rates: ${ratesData.data?.laborRates?.map((rate: any) => `${rate.skill}: $${rate.hourlyRate}/hour`).join(", ") || "Default rates"}
@@ -238,8 +283,13 @@ Be realistic about uncertainty and clearly state assumptions.
    */
   private async analyzeUncertainty(
     request: EstimateRequest,
-    relevantData: Array<{ type: string; content: string; relevance: number; source: string }>,
-    ratesData: any
+    relevantData: Array<{
+      type: string;
+      content: string;
+      relevance: number;
+      source: string;
+    }>,
+    _ratesData: any,
   ): Promise<z.infer<typeof UncertaintyAnalysisSchema>> {
     try {
       const prompt = `
@@ -287,7 +337,12 @@ Provide realistic probability assessments for alternative scenarios.
     request: EstimateRequest,
     breakdown: z.infer<typeof EstimateBreakdownSchema>,
     uncertainty: z.infer<typeof UncertaintyAnalysisSchema>,
-    relevantData: Array<{ type: string; content: string; relevance: number; source: string }>
+    _relevantData: Array<{
+      type: string;
+      content: string;
+      relevance: number;
+      source: string;
+    }>,
   ): Promise<string> {
     try {
       const prompt = `
@@ -298,9 +353,12 @@ Total Cost: $${breakdown.totalCost.toLocaleString()}
 Overall Confidence: ${(breakdown.overallConfidence * 100).toFixed(1)}%
 
 Cost Breakdown:
-${breakdown.categories.map(cat => 
-  `- ${cat.name}: $${cat.cost.toLocaleString()} (${(cat.confidence * 100).toFixed(1)}% confidence)`
-).join("\n")}
+${breakdown.categories
+  .map(
+    (cat) =>
+      `- ${cat.name}: $${cat.cost.toLocaleString()} (${(cat.confidence * 100).toFixed(1)}% confidence)`,
+  )
+  .join("\n")}
 
 Uncertainty Analysis:
 - High Confidence: ${uncertainty.highConfidence.join(", ")}
@@ -309,9 +367,12 @@ Uncertainty Analysis:
 - Missing Data: ${uncertainty.missingData.join(", ")}
 
 Risk Factors:
-${breakdown.riskFactors.map(risk => 
-  `- ${risk.factor}: ${risk.impact} impact, ${(risk.probability * 100).toFixed(1)}% probability`
-).join("\n")}
+${breakdown.riskFactors
+  .map(
+    (risk) =>
+      `- ${risk.factor}: ${risk.impact} impact, ${(risk.probability * 100).toFixed(1)}% probability`,
+  )
+  .join("\n")}
 
 Write a clear, professional narrative that:
 1. Explains the estimate methodology
@@ -336,7 +397,9 @@ Use a professional but accessible tone. Be honest about limitations and uncertai
         temperature: 0.3,
       });
 
-      return response.choices[0]?.message?.content || "Unable to generate narrative";
+      return (
+        response.choices[0]?.message?.content || "Unable to generate narrative"
+      );
     } catch (error) {
       logger.error("Error generating narrative:", error);
       return "Error generating narrative explanation";
@@ -346,7 +409,7 @@ Use a professional but accessible tone. Be honest about limitations and uncertai
   /**
    * Generate query embedding for vector search
    */
-  private async generateQueryEmbedding(query: string): Promise<number[]> {
+  private async generateQueryEmbedding(_query: string): Promise<number[]> {
     // This would use the same embedding model as the ingestion agent
     // For now, return a placeholder
     return new Array(3072).fill(0);
@@ -357,7 +420,7 @@ Use a professional but accessible tone. Be honest about limitations and uncertai
    */
   async compareWithHistorical(
     request: EstimateRequest,
-    currentEstimate: z.infer<typeof EstimateBreakdownSchema>
+    _currentEstimate: z.infer<typeof EstimateBreakdownSchema>,
   ): Promise<{
     similarProjects: Array<{
       project: string;
@@ -372,7 +435,9 @@ Use a professional but accessible tone. Be honest about limitations and uncertai
       // Search for similar historical projects
       const historicalResults = await vectorStore.searchSimilar({
         clientId: request.clientId,
-        queryEmbedding: await this.generateQueryEmbedding(request.projectDescription),
+        queryEmbedding: await this.generateQueryEmbedding(
+          request.projectDescription,
+        ),
         limit: 10,
       });
 
@@ -385,7 +450,10 @@ Use a professional but accessible tone. Be honest about limitations and uncertai
 
       return {
         similarProjects,
-        marketTrends: ["Material costs increasing 5% annually", "Labor shortage affecting rates"],
+        marketTrends: [
+          "Material costs increasing 5% annually",
+          "Labor shortage affecting rates",
+        ],
         recommendations: [
           "Consider bulk material purchasing",
           "Plan for potential delays due to labor constraints",
