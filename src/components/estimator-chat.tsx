@@ -9,11 +9,6 @@ import { AssistantRuntimeProvider, Thread } from "@assistant-ui/react";
 import { useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { ingestionAgent } from "@/agents/ingestion_agent";
-import { ratesAgent } from "@/agents/rates_agent";
-import { explainerAgent } from "@/agents/explainer_agent";
-import { vectorStoreService } from "@/vectorstore";
-import { config } from "@/lib/config";
 
 // Types for estimator-specific chat
 interface EstimatorChatProps {
@@ -80,19 +75,25 @@ const createEstimatorRuntime = () => {
           const response = await fetch(attachment.url);
           const buffer = await response.arrayBuffer();
 
-          // Use ingestion agent to process the file
-          await ingestionAgent.ingest({
-            clientId: metadata.clientId || "default",
-            jobId: metadata.jobId,
-            sourcePath: attachment.name,
-            sourceType: this.getSourceType(attachment.type),
-            fileBuffer: Buffer.from(buffer),
-            mimeType: attachment.type,
-            metadata: {
-              originalName: attachment.name,
-              size: attachment.size,
-              uploadedAt: new Date().toISOString(),
+          // Use API endpoint to process the file
+          await fetch("/api/upload/voice", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
             },
+            body: JSON.stringify({
+              clientId: metadata.clientId || "default",
+              jobId: metadata.jobId,
+              sourcePath: attachment.name,
+              sourceType: this.getSourceType(attachment.type),
+              fileBuffer: Buffer.from(buffer).toString("base64"),
+              mimeType: attachment.type,
+              metadata: {
+                originalName: attachment.name,
+                size: attachment.size,
+                uploadedAt: new Date().toISOString(),
+              },
+            }),
           });
         } catch (error) {
           console.error(
@@ -110,175 +111,38 @@ const createEstimatorRuntime = () => {
       return "file";
     },
 
-    // Route message to appropriate agent
+    // Route message to appropriate agent via API
     async routeToAgent(message: EstimatorMessage) {
-      const content = message.content.toLowerCase();
-
-      // Check if this is a request for rates/costs
-      if (
-        content.includes("rate") ||
-        content.includes("cost") ||
-        content.includes("price")
-      ) {
-        return this.handleRatesRequest(message);
-      }
-
-      // Check if this is a request for estimate explanation
-      if (
-        content.includes("explain") ||
-        content.includes("estimate") ||
-        content.includes("breakdown")
-      ) {
-        return this.handleEstimateRequest(message);
-      }
-
-      // Default to general assistance
-      return this.handleGeneralRequest(message);
-    },
-
-    // Handle rates/cost requests
-    async handleRatesRequest(message: EstimatorMessage) {
-      const ratesData = await ratesAgent.getRates({
-        clientId: message.metadata?.clientId || "default",
-        jobId: message.metadata?.jobId,
-        location: this.extractLocation(message.content),
-        categories: this.extractCategories(message.content),
-      });
-
-      if (ratesData.success) {
-        return {
-          content: this.formatRatesResponse(ratesData.data),
-          metadata: {
-            type: "rates",
-            data: ratesData.data,
-            confidence: 0.9,
+      try {
+        const response = await fetch("/api/chat/estimator", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        };
-      } else {
+          body: JSON.stringify({
+            messages: [message],
+            threadId: this.threadId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
         return {
           content:
-            "I encountered an error retrieving rate information. Please try again or provide more specific details.",
+            data.content || "I'm sorry, I couldn't process your request.",
+          metadata: data.metadata || {},
+        };
+      } catch (error) {
+        console.error("Error routing to agent:", error);
+        return {
+          content:
+            "I apologize, but I encountered an error processing your request. Please try again.",
           metadata: { error: true },
         };
       }
-    },
-
-    // Handle estimate explanation requests
-    async handleEstimateRequest(message: EstimatorMessage) {
-      const estimateData = await explainerAgent.explainEstimate({
-        clientId: message.metadata?.clientId || "default",
-        jobId: message.metadata?.jobId,
-        projectDescription: message.content,
-        location: this.extractLocation(message.content),
-      });
-
-      if (estimateData.success) {
-        return {
-          content:
-            estimateData.data?.narrative || "Estimate generated successfully.",
-          metadata: {
-            type: "estimate",
-            data: estimateData.data,
-            confidence: estimateData.data?.breakdown?.overallConfidence || 0.8,
-          },
-        };
-      } else {
-        return {
-          content:
-            "I encountered an error generating the estimate. Please provide more details about your project.",
-          metadata: { error: true },
-        };
-      }
-    },
-
-    // Handle general requests
-    async handleGeneralRequest(message: EstimatorMessage) {
-      // Search for relevant information in vector store
-      const searchResults = await vectorStoreService.search({
-        query: message.content,
-        clientId: message.metadata?.clientId || "default",
-        jobId: message.metadata?.jobId,
-        limit: 5,
-      });
-
-      if (searchResults.length > 0) {
-        const relevantContent = searchResults
-          .map((result) => result.content)
-          .join("\n\n");
-
-        return {
-          content: `Based on your project data, here's what I found:\n\n${relevantContent}\n\nWould you like me to help you with a specific estimate or cost breakdown?`,
-          metadata: {
-            type: "general",
-            sources: searchResults.map((r) => r.source),
-            confidence: 0.7,
-          },
-        };
-      } else {
-        return {
-          content:
-            "I'd be happy to help you with construction estimates! Please share your project details, upload any relevant documents, or ask me about specific costs, materials, or timelines.",
-          metadata: {
-            type: "general",
-            confidence: 0.5,
-          },
-        };
-      }
-    },
-
-    // Extract location from message content
-    extractLocation(content: string): string | undefined {
-      // Simple location extraction - could be enhanced with NLP
-      const locationMatch = content.match(
-        /(?:in|at|near|location:?)\s+([^,.\n]+)/i,
-      );
-      return locationMatch ? locationMatch[1].trim() : undefined;
-    },
-
-    // Extract categories from message content
-    extractCategories(content: string): string[] {
-      const categories = [];
-      if (content.includes("labor") || content.includes("worker"))
-        categories.push("Labor");
-      if (content.includes("material") || content.includes("supply"))
-        categories.push("Materials");
-      if (content.includes("equipment") || content.includes("machine"))
-        categories.push("Equipment");
-      if (content.includes("overhead") || content.includes("admin"))
-        categories.push("Overhead");
-      return categories;
-    },
-
-    // Format rates response
-    formatRatesResponse(data: any): string {
-      let response = "Here's the rate information I found:\n\n";
-
-      if (data.laborRates && data.laborRates.length > 0) {
-        response += "**Labor Rates:**\n";
-        data.laborRates.forEach((rate: any) => {
-          response += `- ${rate.skill}: $${rate.hourlyRate}/hour\n`;
-        });
-        response += "\n";
-      }
-
-      if (data.materialCosts && data.materialCosts.length > 0) {
-        response += "**Material Costs:**\n";
-        data.materialCosts.forEach((cost: any) => {
-          response += `- ${cost.item}: $${cost.unitPrice}/${cost.unit}\n`;
-        });
-        response += "\n";
-      }
-
-      if (data.locationModifiers) {
-        response += `**Location Modifiers:**\n`;
-        response += `- Total modifier: ${(data.locationModifiers.modifiers.total * 100).toFixed(1)}%\n`;
-        response += `- Region: ${data.locationModifiers.region}\n\n`;
-      }
-
-      response +=
-        "Would you like me to help you create a detailed estimate based on these rates?";
-
-      return response;
     },
   };
 };

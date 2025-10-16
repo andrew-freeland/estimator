@@ -68,20 +68,27 @@ interface PlaceDetailsResponse {
 }
 
 // Helper function to make Google Maps API requests
-async function makeMapsRequest(endpoint: string, params: Record<string, string>) {
+async function makeMapsRequest(
+  endpoint: string,
+  params: Record<string, string>,
+) {
   if (!EA_GOOGLE_MAPS_API_KEY) {
     throw new Error("Google Maps API key not configured");
   }
 
   const url = new URL(`${EA_GOOGLE_MAPS_BASE_URL}${endpoint}`);
-  Object.entries({ ...params, key: EA_GOOGLE_MAPS_API_KEY }).forEach(([key, value]) => {
-    url.searchParams.append(key, value);
-  });
+  Object.entries({ ...params, key: EA_GOOGLE_MAPS_API_KEY }).forEach(
+    ([key, value]) => {
+      url.searchParams.append(key, value);
+    },
+  );
 
   const response = await fetch(url.toString());
-  
+
   if (!response.ok) {
-    throw new Error(`Google Maps API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Google Maps API error: ${response.status} ${response.statusText}`,
+    );
   }
 
   return response.json();
@@ -89,7 +96,8 @@ async function makeMapsRequest(endpoint: string, params: Record<string, string>)
 
 // Tool: Calculate travel distance and time
 export const calculateTravelDistanceTool: Tool = {
-  description: "Calculate travel distance and time between locations for cost estimation",
+  description:
+    "Calculate travel distance and time between locations for cost estimation",
   parameters: {
     type: "object",
     properties: {
@@ -116,50 +124,64 @@ export const calculateTravelDistanceTool: Tool = {
       },
       departureTime: {
         type: "string",
-        description: "Departure time in seconds since epoch (for traffic-aware routing)",
+        description:
+          "Departure time in seconds since epoch (for traffic-aware routing)",
       },
     },
     required: ["origins", "destinations"],
   },
-  execute: async ({ origins, destinations, mode = "driving", avoid, departureTime }) => {
+  execute: async ({
+    origins,
+    destinations,
+    mode = "driving",
+    avoid,
+    departureTime,
+  }) => {
     try {
-      logger.info(`Calculating travel distance from ${origins.join(', ')} to ${destinations.join(', ')}`);
+      logger.info(
+        `Calculating travel distance from ${origins.join(", ")} to ${destinations.join(", ")}`,
+      );
 
       const params: Record<string, string> = {
-        origins: origins.join('|'),
-        destinations: destinations.join('|'),
+        origins: origins.join("|"),
+        destinations: destinations.join("|"),
         mode,
-        units: 'metric',
+        units: "metric",
       };
 
       if (avoid && avoid.length > 0) {
-        params.avoid = avoid.join('|');
+        params.avoid = avoid.join("|");
       }
 
       if (departureTime) {
         params.departure_time = departureTime;
       }
 
-      const response = await makeMapsRequest('/distancematrix/json', params) as DistanceMatrixResponse;
+      const response = (await makeMapsRequest(
+        "/distancematrix/json",
+        params,
+      )) as DistanceMatrixResponse;
 
-      if (response.status !== 'OK') {
+      if (response.status !== "OK") {
         throw new Error(`Distance Matrix API error: ${response.status}`);
       }
 
       // Process results
-      const results = response.rows.map((row, originIndex) => 
-        row.elements.map((element, destIndex) => ({
-          origin: response.origin_addresses[originIndex],
-          destination: response.destination_addresses[destIndex],
-          distance: element.distance,
-          duration: element.duration,
-          status: element.status,
-        }))
-      ).flat();
+      const results = response.rows
+        .map((row, originIndex) =>
+          row.elements.map((element, destIndex) => ({
+            origin: response.origin_addresses[originIndex],
+            destination: response.destination_addresses[destIndex],
+            distance: element.distance,
+            duration: element.duration,
+            status: element.status,
+          })),
+        )
+        .flat();
 
       // Calculate cost estimates based on distance and time
-      const costEstimates = results.map(result => {
-        if (result.status !== 'OK') {
+      const costEstimates = results.map((result) => {
+        if (result.status !== "OK") {
           return { ...result, costEstimate: null };
         }
 
@@ -190,13 +212,18 @@ export const calculateTravelDistanceTool: Tool = {
           summary: {
             totalOrigins: origins.length,
             totalDestinations: destinations.length,
-            successfulRoutes: costEstimates.filter(r => r.status === 'OK').length,
-            averageDistance: costEstimates
-              .filter(r => r.status === 'OK')
-              .reduce((sum, r) => sum + (r.distance.value / 1000), 0) / costEstimates.filter(r => r.status === 'OK').length,
-            averageDuration: costEstimates
-              .filter(r => r.status === 'OK')
-              .reduce((sum, r) => sum + (r.duration.value / 3600), 0) / costEstimates.filter(r => r.status === 'OK').length,
+            successfulRoutes: costEstimates.filter((r) => r.status === "OK")
+              .length,
+            averageDistance:
+              costEstimates
+                .filter((r) => r.status === "OK")
+                .reduce((sum, r) => sum + r.distance.value / 1000, 0) /
+              costEstimates.filter((r) => r.status === "OK").length,
+            averageDuration:
+              costEstimates
+                .filter((r) => r.status === "OK")
+                .reduce((sum, r) => sum + r.duration.value / 3600, 0) /
+              costEstimates.filter((r) => r.status === "OK").length,
           },
         },
       };
@@ -239,17 +266,20 @@ export const geocodeAddressTool: Tool = {
         params.region = region;
       }
 
-      const response = await makeMapsRequest('/geocode/json', params) as GeocodingResponse;
+      const response = (await makeMapsRequest(
+        "/geocode/json",
+        params,
+      )) as GeocodingResponse;
 
-      if (response.status !== 'OK') {
+      if (response.status !== "OK") {
         throw new Error(`Geocoding API error: ${response.status}`);
       }
 
-      const results = response.results.map(result => ({
+      const results = response.results.map((result) => ({
         formattedAddress: result.formatted_address,
         coordinates: result.geometry.location,
         placeId: result.place_id,
-        addressComponents: result.address_components.map(component => ({
+        addressComponents: result.address_components.map((component) => ({
           longName: component.long_name,
           shortName: component.short_name,
           types: component.types,
@@ -294,18 +324,24 @@ export const getPlaceDetailsTool: Tool = {
     },
     required: ["placeId"],
   },
-  execute: async ({ placeId, fields = ["name", "formatted_address", "geometry", "place_id", "types"] }) => {
+  execute: async ({
+    placeId,
+    fields = ["name", "formatted_address", "geometry", "place_id", "types"],
+  }) => {
     try {
       logger.info(`Getting place details for: ${placeId}`);
 
       const params: Record<string, string> = {
         place_id: placeId,
-        fields: fields.join(','),
+        fields: fields.join(","),
       };
 
-      const response = await makeMapsRequest('/place/details/json', params) as PlaceDetailsResponse;
+      const response = (await makeMapsRequest(
+        "/place/details/json",
+        params,
+      )) as PlaceDetailsResponse;
 
-      if (response.status !== 'OK') {
+      if (response.status !== "OK") {
         throw new Error(`Place Details API error: ${response.status}`);
       }
 
@@ -338,7 +374,8 @@ export const getPlaceDetailsTool: Tool = {
 
 // Tool: Calculate location-based cost modifiers
 export const calculateLocationCostModifiersTool: Tool = {
-  description: "Calculate cost modifiers based on location (urban vs rural, cost of living, etc.)",
+  description:
+    "Calculate cost modifiers based on location (urban vs rural, cost of living, etc.)",
   parameters: {
     type: "object",
     properties: {
@@ -359,7 +396,7 @@ export const calculateLocationCostModifiersTool: Tool = {
 
       // First geocode the address
       const geocodeResult = await geocodeAddressTool.execute({ address });
-      
+
       if (!geocodeResult.success) {
         return geocodeResult;
       }
@@ -368,7 +405,7 @@ export const calculateLocationCostModifiersTool: Tool = {
       const { coordinates, addressComponents } = location;
 
       // Determine location type and cost modifiers
-      let modifiers = {
+      const modifiers = {
         urbanRural: 1.0,
         costOfLiving: 1.0,
         accessibility: 1.0,
@@ -376,9 +413,10 @@ export const calculateLocationCostModifiersTool: Tool = {
       };
 
       // Check if it's an urban area (simplified logic)
-      const isUrban = addressComponents.some(component => 
-        component.types.includes('locality') || 
-        component.types.includes('administrative_area_level_1')
+      const isUrban = addressComponents.some(
+        (component) =>
+          component.types.includes("locality") ||
+          component.types.includes("administrative_area_level_1"),
       );
 
       if (isUrban) {
@@ -390,9 +428,9 @@ export const calculateLocationCostModifiersTool: Tool = {
       }
 
       // Check for high-cost regions (simplified)
-      const highCostStates = ['CA', 'NY', 'MA', 'CT', 'NJ', 'HI', 'AK'];
-      const state = addressComponents.find(component => 
-        component.types.includes('administrative_area_level_1')
+      const highCostStates = ["CA", "NY", "MA", "CT", "NJ", "HI", "AK"];
+      const state = addressComponents.find((component) =>
+        component.types.includes("administrative_area_level_1"),
       );
 
       if (state && highCostStates.includes(state.short_name)) {
@@ -400,14 +438,15 @@ export const calculateLocationCostModifiersTool: Tool = {
       }
 
       // Calculate total modifier
-      modifiers.total = modifiers.urbanRural * modifiers.costOfLiving * modifiers.accessibility;
+      modifiers.total =
+        modifiers.urbanRural * modifiers.costOfLiving * modifiers.accessibility;
 
       const result = {
         address,
         coordinates,
         modifiers,
         adjustedCost: baseCost ? baseCost * modifiers.total : null,
-        locationType: isUrban ? 'urban' : 'rural',
+        locationType: isUrban ? "urban" : "rural",
         state: state?.long_name,
       };
 
@@ -416,7 +455,10 @@ export const calculateLocationCostModifiersTool: Tool = {
         data: result,
       };
     } catch (error) {
-      logger.error(`Error calculating location cost modifiers for ${address}:`, error);
+      logger.error(
+        `Error calculating location cost modifiers for ${address}:`,
+        error,
+      );
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",

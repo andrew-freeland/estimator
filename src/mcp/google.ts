@@ -10,23 +10,25 @@ import logger from "lib/logger";
 // EA_ prefix for Estimator Assistant
 const EA_GOOGLE_CLIENT_ID = process.env.EA_GOOGLE_CLIENT_ID;
 const EA_GOOGLE_CLIENT_SECRET = process.env.EA_GOOGLE_CLIENT_SECRET;
-const EA_GOOGLE_API_KEY = process.env.EA_GOOGLE_API_KEY;
+const _EA_GOOGLE_API_KEY = process.env.EA_GOOGLE_API_KEY;
 
 if (!EA_GOOGLE_CLIENT_ID || !EA_GOOGLE_CLIENT_SECRET) {
-  logger.warn("Google OAuth credentials not set - Google Workspace tools will be disabled");
+  logger.warn(
+    "Google OAuth credentials not set - Google Workspace tools will be disabled",
+  );
 }
 
 // Initialize Google APIs
 const oauth2Client = new google.auth.OAuth2(
   EA_GOOGLE_CLIENT_ID,
   EA_GOOGLE_CLIENT_SECRET,
-  `${process.env.BASE_URL}/api/mcp/google/oauth/callback`
+  `${process.env.BASE_URL}/api/mcp/google/oauth/callback`,
 );
 
 // Set up Google APIs
-const drive = google.drive({ version: 'v3', auth: oauth2Client });
-const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
-const docs = google.docs({ version: 'v1', auth: oauth2Client });
+const drive = google.drive({ version: "v3", auth: oauth2Client });
+const sheets = google.sheets({ version: "v4", auth: oauth2Client });
+const docs = google.docs({ version: "v1", auth: oauth2Client });
 
 // Types for Google API responses
 interface GoogleDriveFile {
@@ -80,7 +82,8 @@ export const searchGoogleDriveTool: Tool = {
       },
       mimeType: {
         type: "string",
-        description: "Filter by MIME type (e.g., 'application/vnd.google-apps.spreadsheet' for Sheets)",
+        description:
+          "Filter by MIME type (e.g., 'application/vnd.google-apps.spreadsheet' for Sheets)",
       },
       folderId: {
         type: "string",
@@ -99,11 +102,11 @@ export const searchGoogleDriveTool: Tool = {
       logger.info(`Searching Google Drive for: ${query}`);
 
       let searchQuery = `name contains '${query}' or fullText contains '${query}'`;
-      
+
       if (mimeType) {
         searchQuery += ` and mimeType='${mimeType}'`;
       }
-      
+
       if (folderId) {
         searchQuery += ` and '${folderId}' in parents`;
       }
@@ -111,8 +114,9 @@ export const searchGoogleDriveTool: Tool = {
       const response = await drive.files.list({
         q: searchQuery,
         pageSize: limit,
-        fields: 'files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink)',
-        orderBy: 'modifiedTime desc',
+        fields:
+          "files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink)",
+        orderBy: "modifiedTime desc",
       });
 
       const files = response.data.files as GoogleDriveFile[];
@@ -158,7 +162,11 @@ export const readGoogleSheetTool: Tool = {
     },
     required: ["spreadsheetId"],
   },
-  execute: async ({ spreadsheetId, range = "Sheet1", includeHeaders = true }) => {
+  execute: async ({
+    spreadsheetId,
+    range = "Sheet1",
+    includeHeaders = true,
+  }) => {
     try {
       logger.info(`Reading Google Sheet: ${spreadsheetId}, range: ${range}`);
 
@@ -170,7 +178,7 @@ export const readGoogleSheetTool: Tool = {
       const data = response.data as GoogleSheetData;
       const values = data.values || [];
 
-      let result: any = {
+      const result: any = {
         rawData: values,
         count: values.length,
       };
@@ -178,14 +186,14 @@ export const readGoogleSheetTool: Tool = {
       // Process headers if requested
       if (includeHeaders && values.length > 0) {
         const headers = values[0];
-        const rows = values.slice(1).map(row => {
+        const rows = values.slice(1).map((row) => {
           const obj: Record<string, string> = {};
           headers.forEach((header, index) => {
-            obj[header] = row[index] || '';
+            obj[header] = row[index] || "";
           });
           return obj;
         });
-        
+
         result.headers = headers;
         result.rows = rows;
         result.rowCount = rows.length;
@@ -233,7 +241,7 @@ export const readGoogleDocTool: Tool = {
 
       const doc = response.data as GoogleDocContent;
 
-      let result: any = {
+      const result: any = {
         title: doc.title,
         documentId,
       };
@@ -241,10 +249,10 @@ export const readGoogleDocTool: Tool = {
       if (extractText) {
         // Extract plain text from document content
         const textContent: string[] = [];
-        
-        doc.body.content.forEach(element => {
+
+        doc.body.content.forEach((element) => {
           if (element.paragraph) {
-            element.paragraph.elements.forEach(elem => {
+            element.paragraph.elements.forEach((elem) => {
               if (elem.textRun) {
                 textContent.push(elem.textRun.content);
               }
@@ -252,7 +260,7 @@ export const readGoogleDocTool: Tool = {
           }
         });
 
-        result.textContent = textContent.join('');
+        result.textContent = textContent.join("");
         result.wordCount = result.textContent.split(/\s+/).length;
       }
 
@@ -289,7 +297,8 @@ export const getGoogleFileMetadataTool: Tool = {
 
       const response = await drive.files.get({
         fileId,
-        fields: 'id, name, mimeType, size, createdTime, modifiedTime, webViewLink, webContentLink, parents, owners, permissions',
+        fields:
+          "id, name, mimeType, size, createdTime, modifiedTime, webViewLink, webContentLink, parents, owners, permissions",
       });
 
       const file = response.data as GoogleDriveFile & {
@@ -326,7 +335,8 @@ export const downloadGoogleFileTool: Tool = {
       },
       exportFormat: {
         type: "string",
-        description: "Export format for Google Workspace files (e.g., 'text/plain', 'application/pdf')",
+        description:
+          "Export format for Google Workspace files (e.g., 'text/plain', 'application/pdf')",
       },
     },
     required: ["fileId"],
@@ -337,20 +347,20 @@ export const downloadGoogleFileTool: Tool = {
 
       const response = await drive.files.get({
         fileId,
-        alt: 'media',
+        alt: "media",
         ...(exportFormat && { mimeType: exportFormat }),
       });
 
       // Convert response to base64 for transmission
       const buffer = Buffer.from(response.data as ArrayBuffer);
-      const base64Content = buffer.toString('base64');
+      const base64Content = buffer.toString("base64");
 
       return {
         success: true,
         data: {
           fileId,
           content: base64Content,
-          contentType: exportFormat || 'application/octet-stream',
+          contentType: exportFormat || "application/octet-stream",
           size: buffer.length,
         },
       };
