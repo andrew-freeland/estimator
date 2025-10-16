@@ -228,4 +228,4 @@ For support, email support@estimator-assistant.com or join our Discord community
 
 ---
 
-**Built with ❤️ for the construction industry**
+**Built with ❤️ for the construction industry**# Vercel deployment test
