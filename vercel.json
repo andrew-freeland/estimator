@@ -1,0 +1,10 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "release-please--branches--main--components--better-chatbot": false
+    }
+  },
+  "buildCommand": "pnpm run build",
+  "outputDirectory": ".next"
+}
