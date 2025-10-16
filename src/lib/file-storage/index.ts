@@ -3,20 +3,21 @@ import { IS_DEV } from "lib/const";
 import type { FileStorage } from "./file-storage.interface";
 import { createS3FileStorage } from "./s3-file-storage";
 import { createVercelBlobStorage } from "./vercel-blob-storage";
+import { createGCSFileStorage } from "lib/gcp/storage";
 import logger from "logger";
 
-export type FileStorageDriver = "vercel-blob" | "s3";
+export type FileStorageDriver = "vercel-blob" | "s3" | "gcs";
 
 const resolveDriver = (): FileStorageDriver => {
   const candidate = process.env.FILE_STORAGE_TYPE;
 
   const normalized = candidate?.trim().toLowerCase();
-  if (normalized === "vercel-blob" || normalized === "s3") {
+  if (normalized === "vercel-blob" || normalized === "s3" || normalized === "gcs") {
     return normalized;
   }
 
-  // Default to Vercel Blob
-  return "vercel-blob";
+  // Default to GCS for Estimator Assistant
+  return "gcs";
 };
 
 declare global {
@@ -33,6 +34,8 @@ const createFileStorage = (): FileStorage => {
       return createVercelBlobStorage();
     case "s3":
       return createS3FileStorage();
+    case "gcs":
+      return createGCSFileStorage();
     default: {
       const exhaustiveCheck: never = storageDriver;
       throw new Error(`Unsupported file storage driver: ${exhaustiveCheck}`);
