@@ -512,37 +512,47 @@ export async function queryLogs(params: {
   offset?: number;
 }) {
   try {
-    let query = db.select().from(LogsTable);
+    // Drizzle type fix - build conditions array and apply all at once
+    const conditions: any[] = [];
 
     if (params.eventType) {
-      query = query.where(sql`${LogsTable.eventType} = ${params.eventType}`);
+      conditions.push(sql`${LogsTable.eventType} = ${params.eventType}`);
     }
     if (params.severity) {
-      query = query.where(sql`${LogsTable.severity} = ${params.severity}`);
+      conditions.push(sql`${LogsTable.severity} = ${params.severity}`);
     }
     if (params.clientId) {
-      query = query.where(sql`${LogsTable.clientId} = ${params.clientId}`);
+      conditions.push(sql`${LogsTable.clientId} = ${params.clientId}`);
     }
     if (params.userId) {
-      query = query.where(sql`${LogsTable.userId} = ${params.userId}`);
+      conditions.push(sql`${LogsTable.userId} = ${params.userId}`);
     }
     if (params.sessionId) {
-      query = query.where(sql`${LogsTable.sessionId} = ${params.sessionId}`);
+      conditions.push(sql`${LogsTable.sessionId} = ${params.sessionId}`);
     }
     if (params.projectId) {
-      query = query.where(sql`${LogsTable.projectId} = ${params.projectId}`);
+      conditions.push(sql`${LogsTable.projectId} = ${params.projectId}`);
     }
     if (params.jobId) {
-      query = query.where(sql`${LogsTable.jobId} = ${params.jobId}`);
+      conditions.push(sql`${LogsTable.jobId} = ${params.jobId}`);
     }
     if (params.startDate) {
-      query = query.where(sql`${LogsTable.timestamp} >= ${params.startDate}`);
+      conditions.push(sql`${LogsTable.timestamp} >= ${params.startDate}`);
     }
     if (params.endDate) {
-      query = query.where(sql`${LogsTable.timestamp} <= ${params.endDate}`);
+      conditions.push(sql`${LogsTable.timestamp} <= ${params.endDate}`);
     }
 
-    query = query
+    let query = db.select().from(LogsTable);
+
+    // Apply all conditions at once
+    if (conditions.length > 0) {
+      // Drizzle type fix - temporary type assertion to unblock deployment
+      query = (query as any).where(sql`${sql.join(conditions, sql` AND `)}`);
+    }
+
+    // Drizzle type fix - apply type assertion to entire query chain
+    query = (query as any)
       .orderBy(sql`${LogsTable.timestamp} DESC`)
       .limit(params.limit || 100)
       .offset(params.offset || 0);
