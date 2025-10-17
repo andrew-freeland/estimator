@@ -70,7 +70,9 @@ export const generateImageWithNanoBanana = async (
 ): Promise<GeneratedImageResult> => {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey) {
-    console.warn("GOOGLE_GENERATIVE_AI_API_KEY is not set - image generation will be skipped");
+    console.warn(
+      "GOOGLE_GENERATIVE_AI_API_KEY is not set - image generation will be skipped",
+    );
     return { images: [] };
   }
 

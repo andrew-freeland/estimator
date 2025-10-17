@@ -77,7 +77,9 @@ async function loadStaticModels() {
       "qwen3-coder:free": openrouter("qwen/qwen3-coder:free"),
       "deepseek-r1:free": openrouter("deepseek/deepseek-r1-0528:free"),
       "deepseek-v3:free": openrouter("deepseek/deepseek-chat-v3-0324:free"),
-      "gemini-2.0-flash-exp:free": openrouter("google/gemini-2.0-flash-exp:free"),
+      "gemini-2.0-flash-exp:free": openrouter(
+        "google/gemini-2.0-flash-exp:free",
+      ),
     },
   };
 }
@@ -88,9 +90,10 @@ let modelsCache: any = null;
 async function getModels() {
   if (!modelsCache) {
     const staticModels = await loadStaticModels();
-    
+
     // Load OpenAI compatible models
-    const { createOpenAICompatibleModels, openaiCompatibleModelsSafeParse } = await import("./create-openai-compatiable");
+    const { createOpenAICompatibleModels, openaiCompatibleModelsSafeParse } =
+      await import("./create-openai-compatiable");
     const openaiCompatibleProviders = openaiCompatibleModelsSafeParse(
       process.env.OPENAI_COMPATIBLE_DATA,
     );
@@ -176,7 +179,9 @@ export const customModelProvider = {
   async getModel(model?: ChatModel): Promise<LanguageModel> {
     if (!model) return await getFallbackModel();
     const { allModels } = await getModels();
-    return allModels[model.provider]?.[model.model] || await getFallbackModel();
+    return (
+      allModels[model.provider]?.[model.model] || (await getFallbackModel())
+    );
   },
   // Research-backed fix: Smart model selection based on capabilities
   async getModelForRequest(request: {

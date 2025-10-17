@@ -25,49 +25,77 @@ import { sql } from "drizzle-orm";
 import logger from "@/lib/logger";
 
 // EA_ prefix for Estimator Assistant
-const EA_DATABASE_URL = process.env.EA_DATABASE_URL || process.env.DATABASE_URL;
-// const _EA_GCP_PROJECT_ID = process.env.EA_GCP_PROJECT_ID;
-// const _EA_GCP_REGION = process.env.EA_GCP_REGION;
+// Runtime-safe database connection - lazy initialization
+let dbInstance: ReturnType<typeof drizzle> | null = null;
+let poolInstance: Pool | null = null;
 
-if (!EA_DATABASE_URL) {
-  throw new Error(
-    "EA_DATABASE_URL or DATABASE_URL environment variable is required",
-  );
+async function getDatabaseConnection() {
+  if (dbInstance && poolInstance) {
+    return { db: dbInstance, pool: poolInstance };
+  }
+
+  const EA_DATABASE_URL = process.env.EA_DATABASE_URL || process.env.DATABASE_URL;
+  
+  if (!EA_DATABASE_URL) {
+    throw new Error(
+      "EA_DATABASE_URL or DATABASE_URL environment variable is required",
+    );
+  }
+
+  // Initialize postgres connection with Cloud SQL optimizations
+  const connectionString = EA_DATABASE_URL;
+
+  // Configure postgres client for Cloud SQL
+  poolInstance = new Pool({
+    connectionString,
+    // Cloud SQL connection optimizations
+    max: 20, // Maximum number of connections
+    idleTimeoutMillis: 20000, // Close idle connections after 20 seconds
+    connectionTimeoutMillis: 10000, // Connection timeout
+    ssl:
+      process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }
+        : false,
+  });
+
+  // Initialize drizzle with the postgres pool
+  dbInstance = drizzle(poolInstance);
+  
+  return { db: dbInstance, pool: poolInstance };
 }
 
-// Initialize postgres connection with Cloud SQL optimizations
-const connectionString = EA_DATABASE_URL;
+// Lazy database getter
+export async function getDb() {
+  const { db } = await getDatabaseConnection();
+  return db;
+}
 
-// Configure postgres client for Cloud SQL
-const pool = new Pool({
-  connectionString,
-  // Cloud SQL connection optimizations
-  max: 20, // Maximum number of connections
-  idleTimeoutMillis: 20000, // Close idle connections after 20 seconds
-  connectionTimeoutMillis: 10000, // Connection timeout
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
+// For backward compatibility, export a getter that throws if accessed at module level
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get(target, prop) {
+    throw new Error(
+      "Database connection accessed at module level. Use getDb() function instead for runtime-safe access."
+    );
+  }
 });
-
-// Initialize drizzle with the postgres pool
-export const db = drizzle(pool);
 
 // Vector search utilities for RAG embeddings
 export class VectorStore {
   private static instance: VectorStore;
-  private db: typeof db;
 
-  private constructor(database: typeof db) {
-    this.db = database;
+  private constructor() {
+    // No database reference stored at construction time
   }
 
-  public static getInstance(database: typeof db = db): VectorStore {
+  public static getInstance(): VectorStore {
     if (!VectorStore.instance) {
-      VectorStore.instance = new VectorStore(database);
+      VectorStore.instance = new VectorStore();
     }
     return VectorStore.instance;
+  }
+
+  private async getDb() {
+    return await getDb();
   }
 
   /**
@@ -76,11 +104,12 @@ export class VectorStore {
    */
   async initializeVectorStore() {
     try {
+      const db = await this.getDb();
       // Enable pgvector extension
-      await this.db.execute(sql`CREATE EXTENSION IF NOT EXISTS vector;`);
+      await db.execute(sql`CREATE EXTENSION IF NOT EXISTS vector;`);
 
       // Create embeddings table for RAG
-      await this.db.execute(sql`
+      await db.execute(sql`
         CREATE TABLE IF NOT EXISTS ea_embeddings (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           client_id TEXT NOT NULL,
@@ -97,18 +126,18 @@ export class VectorStore {
       `);
 
       // Create indexes for efficient vector search
-      await this.db.execute(sql`
+      await db.execute(sql`
         CREATE INDEX IF NOT EXISTS ea_embeddings_client_job_idx 
         ON ea_embeddings(client_id, job_id);
       `);
 
-      await this.db.execute(sql`
+      await db.execute(sql`
         CREATE INDEX IF NOT EXISTS ea_embeddings_source_idx 
         ON ea_embeddings(source_path, source_type);
       `);
 
       // Vector similarity search index (HNSW for better performance)
-      await this.db.execute(sql`
+      await db.execute(sql`
         CREATE INDEX IF NOT EXISTS ea_embeddings_vector_idx 
         ON ea_embeddings USING hnsw (embedding vector_cosine_ops)
         WITH (m = 16, ef_construction = 64);
@@ -146,7 +175,8 @@ export class VectorStore {
     } = params;
 
     try {
-      await this.db.execute(sql`
+      const db = await this.getDb();
+      await db.execute(sql`
         INSERT INTO ea_embeddings (
           client_id, job_id, source_path, source_type, 
           content, embedding, metadata, revision
@@ -188,7 +218,8 @@ export class VectorStore {
     } = params;
 
     try {
-      const results = await this.db.execute(sql`
+      const db = await this.getDb();
+      const results = await db.execute(sql`
         SELECT 
           id, client_id, job_id, source_path, source_type,
           content, metadata, revision, created_at,
@@ -219,18 +250,19 @@ export class VectorStore {
     const { clientId, sourcePath, jobId } = params;
 
     try {
+      const db = await this.getDb();
       if (sourcePath) {
-        await this.db.execute(sql`
+        await db.execute(sql`
           DELETE FROM ea_embeddings 
           WHERE client_id = ${clientId} AND source_path = ${sourcePath};
         `);
       } else if (jobId) {
-        await this.db.execute(sql`
+        await db.execute(sql`
           DELETE FROM ea_embeddings 
           WHERE client_id = ${clientId} AND job_id = ${jobId};
         `);
       } else {
-        await this.db.execute(sql`
+        await db.execute(sql`
           DELETE FROM ea_embeddings 
           WHERE client_id = ${clientId};
         `);
@@ -248,7 +280,8 @@ export class VectorStore {
    */
   async getStats(clientId: string) {
     try {
-      const stats = await this.db.execute(sql`
+      const db = await this.getDb();
+      const stats = await db.execute(sql`
         SELECT 
           COUNT(*) as total_embeddings,
           COUNT(DISTINCT source_path) as unique_sources,
@@ -272,6 +305,7 @@ export const vectorStore = VectorStore.getInstance();
 // Database health check
 export async function checkDatabaseHealth() {
   try {
+    const db = await getDb();
     await db.execute(sql`SELECT 1`);
     logger.info("Database connection healthy");
     return true;
@@ -284,6 +318,7 @@ export async function checkDatabaseHealth() {
 // Graceful shutdown
 export async function closeDatabaseConnection() {
   try {
+    const { pool } = await getDatabaseConnection();
     await pool.end();
     logger.info("Database connection closed");
   } catch (error) {

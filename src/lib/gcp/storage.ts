@@ -42,23 +42,47 @@ function redactPII(text: string): string {
 }
 
 // EA_ prefix for Estimator Assistant
-const EA_GCS_BUCKET_NAME = process.env.EA_GCS_BUCKET_NAME;
-const EA_GCP_PROJECT_ID = process.env.EA_GCP_PROJECT_ID;
+// Runtime-safe GCS client initialization - lazy loading
+let storageInstance: Storage | null = null;
 
-if (!EA_GCS_BUCKET_NAME) {
-  throw new Error("EA_GCS_BUCKET_NAME environment variable is required");
+async function getGCSClient() {
+  if (storageInstance) {
+    return storageInstance;
+  }
+
+  const EA_GCS_BUCKET_NAME = process.env.EA_GCS_BUCKET_NAME;
+  const EA_GCP_PROJECT_ID = process.env.EA_GCP_PROJECT_ID;
+
+  if (!EA_GCS_BUCKET_NAME) {
+    throw new Error("EA_GCS_BUCKET_NAME environment variable is required");
+  }
+
+  if (!EA_GCP_PROJECT_ID) {
+    throw new Error("EA_GCP_PROJECT_ID environment variable is required");
+  }
+
+  // Initialize GCS client
+  storageInstance = new Storage({
+    projectId: EA_GCP_PROJECT_ID,
+  });
+
+  return storageInstance;
 }
 
-if (!EA_GCP_PROJECT_ID) {
-  throw new Error("EA_GCP_PROJECT_ID environment variable is required");
+async function getGCSBucketName() {
+  const EA_GCS_BUCKET_NAME = process.env.EA_GCS_BUCKET_NAME;
+  if (!EA_GCS_BUCKET_NAME) {
+    throw new Error("EA_GCS_BUCKET_NAME environment variable is required");
+  }
+  return EA_GCS_BUCKET_NAME;
 }
 
-// Initialize GCS client
-const storage = new Storage({
-  projectId: EA_GCP_PROJECT_ID,
-});
-
-const bucket = storage.bucket(EA_GCS_BUCKET_NAME);
+// Lazy bucket getter
+async function getGCSBucket() {
+  const storage = await getGCSClient();
+  const bucketName = await getGCSBucketName();
+  return storage.bucket(bucketName);
+}
 
 const STORAGE_PREFIX = resolveStoragePrefix();
 
@@ -83,6 +107,7 @@ const mapMetadata = (
 
 const getFileInfo = async (key: string) => {
   try {
+    const bucket = await getGCSBucket();
     const [metadata] = await bucket.file(key).getMetadata();
     return {
       contentType: metadata.contentType || "application/octet-stream",
@@ -101,6 +126,7 @@ const getFileInfo = async (key: string) => {
 
 const fetchSourceBuffer = async (key: string) => {
   try {
+    const bucket = await getGCSBucket();
     const [buffer] = await bucket.file(key).download();
     return buffer;
   } catch (error: unknown) {
@@ -149,6 +175,7 @@ export const createGCSFileStorage = (): FileStorage => {
         }
       }
 
+      const bucket = await getGCSBucket();
       const file = bucket.file(pathname);
 
       await file.save(processedBuffer, {
@@ -181,6 +208,7 @@ export const createGCSFileStorage = (): FileStorage => {
       const filename = `temp-${generateUUID()}`;
       const pathname = buildPathname(filename);
 
+      const bucket = await getGCSBucket();
       const file = bucket.file(pathname);
 
       const [signedUrl] = await file.getSignedUrl({
@@ -204,6 +232,7 @@ export const createGCSFileStorage = (): FileStorage => {
 
     async delete(key) {
       try {
+        const bucket = await getGCSBucket();
         await bucket.file(key).delete();
       } catch (error: unknown) {
         if (error instanceof Error && error.message.includes("404")) {
@@ -216,6 +245,7 @@ export const createGCSFileStorage = (): FileStorage => {
 
     async exists(key) {
       try {
+        const bucket = await getGCSBucket();
         const [exists] = await bucket.file(key).exists();
         return exists;
       } catch (error: unknown) {

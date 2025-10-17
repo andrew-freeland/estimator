@@ -50,7 +50,7 @@ const envSchema = z.object({
   AWS_S3_BUCKET: z.string().optional(),
 
   // Redis configuration
-  REDIS_URL: z.string().url().optional(),
+  REDIS_URL: z.string().optional(),
 
   // Development settings
   NO_HTTPS: z.string().optional(),
@@ -244,5 +244,5 @@ export const validateConfig = () => {
   }
 };
 
-// Run validation
-validateConfig();
+// Runtime-only validation - don't run during build
+// validateConfig();

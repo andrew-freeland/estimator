@@ -10,6 +10,124 @@ This document provides comprehensive guidelines for deploying the Better Chatbot
 4. [Deployment Checklist](#deployment-checklist)
 5. [Troubleshooting](#troubleshooting)
 
+## Runtime Environment Access Patterns
+
+### Critical Rule: No Module-Level Environment Variable Access
+
+**❌ NEVER do this:**
+```typescript
+// This will cause build failures if env vars are missing
+const db = new Database(process.env.DATABASE_URL);
+const storage = new Storage({ projectId: process.env.GCP_PROJECT_ID });
+const redis = new Redis(process.env.REDIS_URL);
+```
+
+**✅ ALWAYS do this:**
+```typescript
+// Runtime-safe lazy initialization
+async function getDatabase() {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is required");
+  return new Database(url);
+}
+
+async function getStorage() {
+  const projectId = process.env.GCP_PROJECT_ID;
+  if (!projectId) throw new Error("GCP_PROJECT_ID is required");
+  return new Storage({ projectId });
+}
+```
+
+### Environment Variable Validation Patterns
+
+**For Required Variables:**
+```typescript
+async function getRequiredEnv(key: string): Promise<string> {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`${key} environment variable is required`);
+  }
+  return value;
+}
+```
+
+**For Optional Variables with Fallbacks:**
+```typescript
+function getOptionalEnv(key: string, defaultValue: string): string {
+  return process.env[key] || defaultValue;
+}
+```
+
+**For Boolean Flags:**
+```typescript
+function getBooleanEnv(key: string, defaultValue = false): boolean {
+  return process.env[key] === "true" || defaultValue;
+}
+```
+
+### Client Initialization Patterns
+
+**Database Connections:**
+```typescript
+// ✅ Good - Lazy initialization
+let dbInstance: Database | null = null;
+
+async function getDb(): Promise<Database> {
+  if (!dbInstance) {
+    const url = await getRequiredEnv("DATABASE_URL");
+    dbInstance = new Database(url);
+  }
+  return dbInstance;
+}
+```
+
+**AI SDK Clients:**
+```typescript
+// ✅ Good - Dynamic imports with lazy initialization
+async function getOpenAIClient() {
+  const { openai } = await import("@ai-sdk/openai");
+  const apiKey = await getRequiredEnv("OPENAI_API_KEY");
+  return openai(apiKey);
+}
+```
+
+**Storage Clients:**
+```typescript
+// ✅ Good - Runtime-safe initialization
+async function getGCSClient() {
+  const { Storage } = await import("@google-cloud/storage");
+  const projectId = await getRequiredEnv("GCP_PROJECT_ID");
+  return new Storage({ projectId });
+}
+```
+
+### Error Handling for Missing Environment Variables
+
+**Graceful Degradation:**
+```typescript
+async function getOptionalService() {
+  const apiKey = process.env.OPTIONAL_API_KEY;
+  if (!apiKey) {
+    console.warn("OPTIONAL_API_KEY not set - service will be disabled");
+    return null;
+  }
+  return new Service(apiKey);
+}
+```
+
+**Build-Safe Validation:**
+```typescript
+// ✅ Good - Only validate at runtime
+export async function validateEnvironment() {
+  const required = ["DATABASE_URL", "OPENAI_API_KEY"];
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+  }
+}
+```
+
 ## Build Performance and Memory Optimization Guidelines
 
 Building a Next.js 15.3.2 project with numerous dependencies (e.g. Vercel's AI SDK providers, OpenAI/Google SDKs, vector stores, UI libraries, etc.) can strain Vercel's build memory and slow down or even fail deployments. This section provides practical strategies to optimize build performance and prevent memory-related issues.
