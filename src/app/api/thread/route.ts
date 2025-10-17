@@ -1,6 +1,10 @@
 import { getSession } from "auth/server";
 import { chatRepository } from "lib/db/repository";
 
+// Fixed Vercel Edge runtime (Better-Auth)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const session = await getSession();
 

@@ -9,6 +9,10 @@ import {
   UIMessage,
 } from "ai";
 
+// Fixed Vercel Edge runtime (Better-Auth)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { customModelProvider, isToolCallUnsupportedModel } from "lib/ai/models";
 
 import { mcpClientsManager } from "lib/ai/mcp/mcp-manager";

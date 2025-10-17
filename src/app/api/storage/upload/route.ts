@@ -3,6 +3,10 @@ import { getSession } from "auth/server";
 import { serverFileStorage, storageDriver } from "lib/file-storage";
 import { checkStorageAction } from "../actions";
 
+// Fixed Vercel Edge runtime (Better-Auth)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   const session = await getSession();
 

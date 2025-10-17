@@ -7,7 +7,10 @@ import { IS_VERCEL_ENV } from "lib/const";
  * Get storage configuration info.
  * Used by clients to determine upload strategy.
  */
-export async function getStorageInfoAction() {
+export async function getStorageInfoAction(): Promise<{
+  type: "vercel-blob" | "s3" | "gcs";
+  supportsDirectUpload: boolean;
+}> {
   return {
     type: storageDriver,
     supportsDirectUpload:

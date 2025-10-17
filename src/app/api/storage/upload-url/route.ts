@@ -6,6 +6,10 @@ import globalLogger from "lib/logger";
 import { colorize } from "consola/utils";
 import { checkStorageAction } from "../actions";
 
+// Fixed Vercel Edge runtime (Better-Auth)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const logger = globalLogger.withDefaults({
   message: colorize("blackBright", `[${storageDriver} Upload URL API]`),
 });
