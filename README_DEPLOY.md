@@ -112,8 +112,6 @@ BETTER_AUTH_SECRET=your-32-character-secret-key
 BETTER_AUTH_URL=https://your-service-url.run.app
 
 # External Services (Optional)
-EA_BUILDERTREND_API_KEY=your-buildertrend-api-key
-EA_BUILDERTREND_BASE_URL=https://api.buildertrend.com/v1
 EA_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 EA_GOOGLE_CLIENT_ID=your-google-oauth-client-id
 EA_GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
@@ -122,7 +120,6 @@ EA_GOOGLE_API_KEY=your-google-api-key
 # Feature Flags
 ENABLE_VOICE_TRANSCRIPTION=true
 ENABLE_GOOGLE_WORKSPACE=false
-ENABLE_BUILDERTREND=true
 ENABLE_MAPS=true
 ENABLE_VECTOR_SEARCH=true
 

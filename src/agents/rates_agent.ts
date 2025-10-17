@@ -1,7 +1,7 @@
 // @module: rates_agent
 // Rates Agent for Estimator Assistant MCP
 // Retrieves labor rates, material costs, schedule data, and location modifiers
-// from manually uploaded documents (Buildertrend reports, cost sheets, etc.)
+// from manually uploaded documents (profitability reports, cost sheets, etc.)
 // and Google Sheets integration
 
 import "server-only";
@@ -130,7 +130,7 @@ export class RatesAgent {
 
     try {
       // Get rates from vector store (previously ingested documents)
-      // This includes manually uploaded Buildertrend reports, labor rate sheets, etc.
+      // This includes manually uploaded profitability reports, labor rate sheets, etc.
       const vectorRates = await this.getRatesFromVectorStore(request);
       rates.push(...vectorRates);
 
@@ -160,7 +160,7 @@ export class RatesAgent {
 
     try {
       // Get costs from vector store (previously ingested documents)
-      // This includes manually uploaded Buildertrend reports, material cost sheets, supplier quotes, etc.
+      // This includes manually uploaded profitability reports, material cost sheets, supplier quotes, etc.
       const vectorCosts = await this.getMaterialCostsFromVectorStore(request);
       costs.push(...vectorCosts);
 
@@ -190,7 +190,7 @@ export class RatesAgent {
 
     try {
       // Get schedule from vector store (previously ingested documents)
-      // This includes manually uploaded Buildertrend reports, project schedules, task breakdowns, etc.
+      // This includes manually uploaded profitability reports, project schedules, task breakdowns, etc.
       const vectorSchedule = await this.getScheduleFromVectorStore(request);
       scheduleData.push(...vectorSchedule);
 

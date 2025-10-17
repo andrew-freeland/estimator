@@ -50,11 +50,9 @@ Visit: `https://your-vercel-app.vercel.app/test-chat`
 
 ### 3. External Service Integrations
 **Files Modified:**
-- `src/mcp/buildertrend.ts` - Marked as optional
 - `src/agents/rates_agent.ts` - Updated to document-based approach
 
 **What's Disabled:**
-- Buildertrend API integration
 - Google Maps API integration
 - Real-time external data fetching
 
@@ -100,13 +98,7 @@ Visit: `https://your-vercel-app.vercel.app/test-chat`
    - Set up material cost databases
 
 ### Phase 3: External Integrations
-1. **Buildertrend API** (Optional)
-   ```bash
-   # Add to environment variables:
-   EA_BUILDERTREND_API_KEY=your_api_key
-   ```
-
-2. **Google Maps API** (Optional)
+1. **Google Maps API** (Optional)
    ```bash
    # Add to environment variables:
    EA_GOOGLE_MAPS_API_KEY=your_api_key

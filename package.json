@@ -21,7 +21,7 @@
     "lint": "next lint && biome lint",
     "lint:fix": "next lint --fix && biome lint --write --unsafe",
     "format": "biome format --write",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc --noEmit --project tsconfig.build.json",
     "initial:env": "tsx scripts/initial-env.ts",
     "openai-compatiable:init": "tsx scripts/init-openai-compatiable.ts",
     "openai-compatiable:parse": "tsx scripts/parse-openai-compatiable.ts",

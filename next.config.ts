@@ -22,6 +22,28 @@ export default () => {
       webpackMemoryOptimizations: true, // Reduce memory usage during build
       workerThreads: false, // Disable build workers to avoid conflicts
     },
+    webpack: (config, { isServer }) => {
+      // Fix better-auth Edge Runtime compatibility
+      if (!isServer) {
+        config.resolve.fallback = {
+          ...config.resolve.fallback,
+          fs: false,
+          net: false,
+          tls: false,
+        };
+      }
+
+      // Exclude better-auth from Edge Runtime bundling
+      config.externals = config.externals || [];
+      if (Array.isArray(config.externals)) {
+        config.externals.push({
+          "better-auth": "better-auth",
+          "better-auth/cookies": "better-auth/cookies",
+        });
+      }
+
+      return config;
+    },
   };
   const withNextIntl = createNextIntlPlugin();
   return withNextIntl(nextConfig);

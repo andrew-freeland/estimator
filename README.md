@@ -1,6 +1,6 @@
 # 🏗️ Estimator Assistant MCP
 
-A modular, secure, cloud-deployable **Estimator Assistant MCP** for construction estimating — capable of ingesting files, transcribing voice notes, referencing Buildertrend & Google Workspace data, and explaining project estimates with confidence and reasoning.
+A modular, secure, cloud-deployable **Estimator Assistant MCP** for construction estimating — capable of ingesting files, transcribing voice notes, referencing Google Workspace data, and explaining project estimates with confidence and reasoning.
 
 ## 🚀 Features
 
@@ -24,7 +24,6 @@ A modular, secure, cloud-deployable **Estimator Assistant MCP** for construction
 
 ### MCP Tools
 
-- **`/mcp/buildertrend.ts`** → Job data, schedules, historical costs
 - **`/mcp/google.ts`** → Workspace files and Sheets rates
 - **`/mcp/maps.ts`** → Travel distance and time modifiers
 
@@ -41,7 +40,6 @@ A modular, secure, cloud-deployable **Estimator Assistant MCP** for construction
 - Node.js 18+ and pnpm
 - Google Cloud Platform account
 - OpenAI API key
-- Buildertrend API access (optional)
 - Google Workspace API access (optional)
 
 ### Environment Configuration
@@ -67,7 +65,6 @@ GCS_BUCKET_NAME=your_gcs_bucket_name
 DATABASE_URL=postgresql://user:pass@host:5432/db
 
 # External APIs (Optional)
-BUILDERTREND_API_KEY=your_buildertrend_api_key
 GOOGLE_API_KEY=your_google_api_key
 
 # AI Models
@@ -220,7 +217,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built on top of [better-chatbot](https://github.com/cgoinglove/better-chatbot)
 - UI components from [assistant-ui](https://github.com/assistant-ui/assistant-ui)
 - AI capabilities powered by OpenAI and Google Cloud Platform
-- Construction industry insights from Buildertrend and Google Workspace
+- Construction industry insights from Google Workspace
 
 ## 📞 Support
 

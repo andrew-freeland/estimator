@@ -190,39 +190,6 @@ async function checkWhisper(): Promise<HealthCheck> {
 async function checkExternalServices(): Promise<HealthCheck[]> {
   const checks: HealthCheck[] = [];
 
-  // Check Buildertrend if enabled (optional)
-  if (config.EA_BUILDERTREND_API_KEY) {
-    const startTime = Date.now();
-    try {
-      const response = await fetch(config.EA_BUILDERTREND_BASE_URL, {
-        headers: {
-          Authorization: `Bearer ${config.EA_BUILDERTREND_API_KEY}`,
-        },
-      });
-
-      checks.push({
-        service: "buildertrend",
-        status: response.ok ? "healthy" : "unhealthy",
-        responseTime: Date.now() - startTime,
-        error: response.ok ? undefined : `HTTP ${response.status}`,
-      });
-    } catch (error) {
-      checks.push({
-        service: "buildertrend",
-        status: "unhealthy",
-        responseTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  } else {
-    checks.push({
-      service: "buildertrend",
-      status: "healthy",
-      responseTime: 0,
-      error: undefined,
-    });
-  }
-
   // Check Google Maps if enabled
   if (config.EA_GOOGLE_MAPS_API_KEY) {
     const startTime = Date.now();

@@ -33,13 +33,6 @@ const envSchema = z.object({
   EA_GOOGLE_CLIENT_SECRET: z.string().optional(),
   EA_GOOGLE_API_KEY: z.string().optional(),
 
-  // Buildertrend integration
-  EA_BUILDERTREND_API_KEY: z.string().optional(),
-  EA_BUILDERTREND_BASE_URL: z
-    .string()
-    .url()
-    .default("https://api.buildertrend.com/v1"),
-
   // Google Maps integration
   EA_GOOGLE_MAPS_API_KEY: z.string().optional(),
 
@@ -87,7 +80,6 @@ const envSchema = z.object({
   // Feature flags
   ENABLE_VOICE_TRANSCRIPTION: z.string().optional(),
   ENABLE_GOOGLE_WORKSPACE: z.string().optional(),
-  ENABLE_BUILDERTREND: z.string().optional(),
   ENABLE_MAPS: z.string().optional(),
   ENABLE_VECTOR_SEARCH: z.string().optional(),
 });
@@ -148,7 +140,6 @@ export const isDocker = Boolean(process.env.DOCKER_BUILD);
 export const features = {
   voiceTranscription: config.ENABLE_VOICE_TRANSCRIPTION === "true",
   googleWorkspace: config.ENABLE_GOOGLE_WORKSPACE === "true",
-  buildertrend: config.ENABLE_BUILDERTREND === "true",
   maps: config.ENABLE_MAPS === "true",
   vectorSearch: config.ENABLE_VECTOR_SEARCH === "true",
 };
@@ -180,10 +171,6 @@ export const externalServices = {
     clientId: config.EA_GOOGLE_CLIENT_ID,
     clientSecret: config.EA_GOOGLE_CLIENT_SECRET,
     apiKey: config.EA_GOOGLE_API_KEY,
-  },
-  buildertrend: {
-    apiKey: config.EA_BUILDERTREND_API_KEY,
-    baseUrl: config.EA_BUILDERTREND_BASE_URL,
   },
   maps: {
     apiKey: config.EA_GOOGLE_MAPS_API_KEY,
@@ -228,10 +215,6 @@ export const validateConfig = () => {
     errors.push(
       "Google Workspace integration enabled but missing OAuth credentials",
     );
-  }
-
-  if (features.buildertrend && !externalServices.buildertrend.apiKey) {
-    errors.push("Buildertrend integration enabled but missing API key");
   }
 
   if (features.maps && !externalServices.maps.apiKey) {

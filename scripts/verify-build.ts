@@ -119,11 +119,7 @@ class BuildVerifier {
         "OPENAI_API_KEY",
       ];
 
-      const optionalVars = [
-        "EA_BUILDERTREND_API_KEY",
-        "EA_GOOGLE_API_KEY",
-        "EA_MAPS_API_KEY",
-      ];
+      const optionalVars = ["EA_GOOGLE_API_KEY", "EA_MAPS_API_KEY"];
 
       const missing = requiredVars.filter((varName) => !process.env[varName]);
       const present = requiredVars.filter((varName) => process.env[varName]);
