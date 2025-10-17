@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function EmailSignUpPage() {
-  const isFirstUser = await getIsFirstUser();
+  // Temporarily disable first user check to avoid better-auth ES module issues
+  const isFirstUser = false;
   return <EmailSignUp isFirstUser={isFirstUser} />;
 }
