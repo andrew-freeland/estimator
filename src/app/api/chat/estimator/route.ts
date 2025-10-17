@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     return streamText({
       model: {
         provider: "openai",
-        model: "gpt-4o-mini",
+        modelId: "gpt-4o-mini",
         apiKey: process.env.OPENAI_API_KEY,
       },
       messages: [
