@@ -22,9 +22,9 @@ export async function POST(request: Request) {
     return streamText({
       model: {
         provider: "openai",
-        modelId: aiConfig.explainerModel, // Uses "gpt-4o" from config
-        apiKey: aiConfig.openaiApiKey,
+        modelId: aiConfig.explainerModel, // Uses "gpt-5" from config
       },
+      apiKey: aiConfig.openaiApiKey,
       messages: [
         {
           role: "system",
