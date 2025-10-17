@@ -1,6 +1,5 @@
 import SignIn from "@/components/auth/sign-in";
 import { getAuthConfig } from "lib/auth/config";
-import { getIsFirstUser } from "lib/auth/server";
 
 // Force dynamic rendering to avoid build-time database calls
 export const dynamic = "force-dynamic";
@@ -8,7 +7,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function SignInPage() {
-  const isFirstUser = await getIsFirstUser();
+  // Temporarily disable first user check to avoid better-auth ES module issues
+  const isFirstUser = false;
+
   const {
     emailAndPasswordEnabled,
     signUpEnabled,
