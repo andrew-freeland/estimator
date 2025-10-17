@@ -1,11 +1,26 @@
 // @module: gcp_db
 // Google Cloud SQL (Postgres) + pgvector adapter for Estimator Assistant MCP
 // Extends existing database setup with vector search capabilities for RAG
+//
+// ⚠️  TEMPORARILY MODIFIED FOR DEPLOYMENT ⚠️
+//
+// This file has been modified to work without pgvector imports during build.
+// See DEPLOYMENT_STATUS.md for details on restoring full functionality.
+//
+// TEMPORARILY DISABLED:
+// - pgvector import (causing build issues)
+// - Vector operations using vector() function
+//
+// TO RESTORE:
+// 1. Set up CloudSQL database with pgvector extension
+// 2. Uncomment the vector import below
+// 3. Replace sql.raw() calls with vector() function calls
 
 import "server-only";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-// import { vector } from "pgvector/pg"; // Temporarily disabled due to build issues
+// TODO: Re-enable after database setup
+// import { vector } from "pgvector/pg";
 import { sql } from "drizzle-orm";
 import logger from "lib/logger";
 

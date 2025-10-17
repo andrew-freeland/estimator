@@ -5,7 +5,6 @@
 
 import { execSync } from "child_process";
 import { existsSync } from "fs";
-import { join } from "path";
 
 // EA_ prefix for Estimator Assistant
 const EA_VERIFY_TIMEOUT = 300000; // 5 minutes
