@@ -53,7 +53,8 @@ export async function POST(request: Request) {
       },
     });
 
-    return result.toUIMessageStreamResponse();
+    // AI SDK model fix
+    return result.toTextStreamResponse();
   } catch (err) {
     return new Response(handleError(err), { status: 500 });
   }

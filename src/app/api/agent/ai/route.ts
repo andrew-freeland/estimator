@@ -88,6 +88,7 @@ export async function POST(request: Request) {
       schema: dynamicAgentTable,
     });
 
+    // AI SDK model fix
     return result.toTextStreamResponse();
   } catch (error) {
     logger.error(error);

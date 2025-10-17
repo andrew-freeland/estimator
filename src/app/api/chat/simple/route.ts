@@ -4,6 +4,7 @@
 
 import { streamText } from "ai";
 import { aiConfig } from "@/lib/config";
+import { customModelProvider } from "@/lib/ai/models";
 
 export async function POST(request: Request) {
   try {
@@ -18,13 +19,15 @@ export async function POST(request: Request) {
       return new Response("Last message must be from user", { status: 400 });
     }
 
+    // AI SDK model fix
+    const model = customModelProvider.getModel({
+      provider: "openai",
+      model: aiConfig.explainerModel, // Uses "gpt-5" from config
+    });
+
     // Simple streaming response - no complex agents, no database
-    return streamText({
-      model: {
-        provider: "openai",
-        modelId: aiConfig.explainerModel, // Uses "gpt-5" from config
-      },
-      apiKey: aiConfig.openaiApiKey,
+    const result = await streamText({
+      model,
       messages: [
         {
           role: "system",
@@ -33,7 +36,9 @@ export async function POST(request: Request) {
         },
         ...messages,
       ],
-    }).toDataStreamResponse();
+    });
+
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error("Error in simple chat API:", error);
     return new Response("Internal server error", { status: 500 });

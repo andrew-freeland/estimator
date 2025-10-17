@@ -45,7 +45,8 @@ export async function POST(request: Request) {
       model: aiConfig.explainerModel, // Uses "gpt-5" from config
     });
 
-    return streamText({
+    // AI SDK model fix
+    const result = await streamText({
       model,
       messages: [
         {
@@ -55,7 +56,9 @@ export async function POST(request: Request) {
         },
         ...messages,
       ],
-    }).toTextStreamResponse();
+    });
+
+    return result.toTextStreamResponse();
   } catch (error) {
     logger.error("Error in estimator chat API:", error);
     return new Response("Internal server error", { status: 500 });

@@ -45,7 +45,8 @@ export async function POST(request: Request) {
       }`.trim(),
       messages: convertToModelMessages(messages),
       experimental_transform: smoothStream({ chunking: "word" }),
-    }).toUIMessageStreamResponse();
+      // AI SDK model fix
+    }).toTextStreamResponse();
   } catch (error: any) {
     logger.error(error);
     return new Response(error.message || "Oops, an error occured!", {
