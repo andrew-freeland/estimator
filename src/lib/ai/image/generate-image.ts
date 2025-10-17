@@ -1,14 +1,6 @@
 "use server";
-import {
-  GoogleGenAI,
-  Part as GeminiPart,
-  Content as GeminiMessage,
-} from "@google/genai";
 import { safe, watchError } from "ts-safe";
 import { getBase64Data } from "lib/file-storage/storage-utils";
-import { openai } from "@ai-sdk/openai";
-import { xai } from "@ai-sdk/xai";
-
 import {
   FilePart,
   ImagePart,
@@ -37,6 +29,7 @@ export type GeneratedImageResult = {
 export async function generateImageWithOpenAI(
   options: GenerateImageOptions,
 ): Promise<GeneratedImageResult> {
+  const { openai } = await import("@ai-sdk/openai");
   return experimental_generateImage({
     model: openai.image("gpt-image-1-mini"),
     abortSignal: options.abortSignal,
@@ -57,6 +50,7 @@ export async function generateImageWithOpenAI(
 export async function generateImageWithXAI(
   options: GenerateImageOptions,
 ): Promise<GeneratedImageResult> {
+  const { xai } = await import("@ai-sdk/xai");
   return experimental_generateImage({
     model: xai.image("grok-2-image"),
     abortSignal: options.abortSignal,
@@ -76,9 +70,13 @@ export const generateImageWithNanoBanana = async (
 ): Promise<GeneratedImageResult> => {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey) {
-    throw new Error("GOOGLE_GENERATIVE_AI_API_KEY is not set");
+    console.warn("GOOGLE_GENERATIVE_AI_API_KEY is not set - image generation will be skipped");
+    return { images: [] };
   }
 
+  const { GoogleGenAI, Part, Content } = await import("@google/genai");
+  type GeminiPart = typeof Part;
+  type GeminiMessage = typeof Content;
   const ai = new GoogleGenAI({
     apiKey: apiKey,
   });

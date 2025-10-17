@@ -128,7 +128,13 @@ export const openaiImageTool = createTool({
   execute: async ({ mode }, { messages, abortSignal }) => {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error("OPENAI_API_KEY is not set");
+      console.warn(
+        "OPENAI_API_KEY is not set - image generation will be skipped",
+      );
+      return {
+        content:
+          "Image generation is not available. Please configure OPENAI_API_KEY to enable this feature.",
+      };
     }
 
     let hasFoundImage = false;
