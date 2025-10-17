@@ -18,6 +18,9 @@ export default () => {
     experimental: {
       taint: true,
       authInterrupts: true,
+      // Research-backed fix: Next.js 15.3.2 memory optimization
+      webpackMemoryOptimizations: true, // Reduce memory usage during build
+      workerThreads: false, // Disable build workers to avoid conflicts
     },
   };
   const withNextIntl = createNextIntlPlugin();

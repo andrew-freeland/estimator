@@ -16,7 +16,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/users", request.url));
   }
 
-  const sessionCookie = getSessionCookie(request);
+  // Research-backed fix: Better-auth Edge runtime compatibility
+  // Use getSessionCookie for session detection, with fallback for Edge runtime
+  let sessionCookie;
+  try {
+    sessionCookie = getSessionCookie(request);
+  } catch (_error) {
+    // Fallback: check for session cookie presence manually if getSessionCookie fails on Edge
+    sessionCookie = request.cookies.get("ba-session")?.value;
+  }
 
   if (!sessionCookie) {
     return NextResponse.redirect(new URL("/sign-in", request.url));

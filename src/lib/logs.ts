@@ -5,7 +5,7 @@
 import "server-only";
 import { db } from "@/lib/gcp/db";
 import { LogsTable } from "@/lib/db/pg/schema.pg";
-import { sql } from "drizzle-orm";
+import { sql, and, eq, gte, lte, desc } from "drizzle-orm";
 import logger from "@/lib/logger";
 
 // EA_ prefix for Estimator Assistant
@@ -512,48 +512,33 @@ export async function queryLogs(params: {
   offset?: number;
 }) {
   try {
-    // Drizzle type fix - build conditions array and apply all at once
-    const conditions: any[] = [];
-
-    if (params.eventType) {
-      conditions.push(sql`${LogsTable.eventType} = ${params.eventType}`);
-    }
-    if (params.severity) {
-      conditions.push(sql`${LogsTable.severity} = ${params.severity}`);
-    }
-    if (params.clientId) {
-      conditions.push(sql`${LogsTable.clientId} = ${params.clientId}`);
-    }
-    if (params.userId) {
-      conditions.push(sql`${LogsTable.userId} = ${params.userId}`);
-    }
-    if (params.sessionId) {
-      conditions.push(sql`${LogsTable.sessionId} = ${params.sessionId}`);
-    }
-    if (params.projectId) {
-      conditions.push(sql`${LogsTable.projectId} = ${params.projectId}`);
-    }
-    if (params.jobId) {
-      conditions.push(sql`${LogsTable.jobId} = ${params.jobId}`);
-    }
-    if (params.startDate) {
-      conditions.push(sql`${LogsTable.timestamp} >= ${params.startDate}`);
-    }
-    if (params.endDate) {
-      conditions.push(sql`${LogsTable.timestamp} <= ${params.endDate}`);
-    }
-
-    let query = db.select().from(LogsTable);
-
-    // Apply all conditions at once
-    if (conditions.length > 0) {
-      // Drizzle type fix - temporary type assertion to unblock deployment
-      query = (query as any).where(sql`${sql.join(conditions, sql` AND `)}`);
-    }
-
-    // Drizzle type fix - apply type assertion to entire query chain
-    query = (query as any)
-      .orderBy(sql`${LogsTable.timestamp} DESC`)
+    // Research-backed fix: Drizzle ORM conditional query pattern
+    // Use and() with undefined filters to avoid type narrowing issues
+    const query = db
+      .select()
+      .from(LogsTable)
+      .where(
+        and(
+          params.eventType
+            ? eq(LogsTable.eventType, params.eventType)
+            : undefined,
+          params.severity ? eq(LogsTable.severity, params.severity) : undefined,
+          params.clientId ? eq(LogsTable.clientId, params.clientId) : undefined,
+          params.userId ? eq(LogsTable.userId, params.userId) : undefined,
+          params.sessionId
+            ? eq(LogsTable.sessionId, params.sessionId)
+            : undefined,
+          params.projectId
+            ? eq(LogsTable.projectId, params.projectId)
+            : undefined,
+          params.jobId ? eq(LogsTable.jobId, params.jobId) : undefined,
+          params.startDate
+            ? gte(LogsTable.timestamp, params.startDate)
+            : undefined,
+          params.endDate ? lte(LogsTable.timestamp, params.endDate) : undefined,
+        ),
+      )
+      .orderBy(desc(LogsTable.timestamp))
       .limit(params.limit || 100)
       .offset(params.offset || 0);
 
@@ -572,7 +557,8 @@ export async function getLogStats(params: {
   endDate?: Date;
 }) {
   try {
-    let query = db
+    // Research-backed fix: Drizzle ORM conditional query pattern
+    const query = db
       .select({
         eventType: LogsTable.eventType,
         severity: LogsTable.severity,
@@ -581,20 +567,17 @@ export async function getLogStats(params: {
         successRate: sql<number>`avg(case when ${LogsTable.success} then 1.0 else 0.0 end)`,
       })
       .from(LogsTable)
+      .where(
+        and(
+          params.clientId ? eq(LogsTable.clientId, params.clientId) : undefined,
+          params.userId ? eq(LogsTable.userId, params.userId) : undefined,
+          params.startDate
+            ? gte(LogsTable.timestamp, params.startDate)
+            : undefined,
+          params.endDate ? lte(LogsTable.timestamp, params.endDate) : undefined,
+        ),
+      )
       .groupBy(LogsTable.eventType, LogsTable.severity);
-
-    if (params.clientId) {
-      query = query.where(sql`${LogsTable.clientId} = ${params.clientId}`);
-    }
-    if (params.userId) {
-      query = query.where(sql`${LogsTable.userId} = ${params.userId}`);
-    }
-    if (params.startDate) {
-      query = query.where(sql`${LogsTable.timestamp} >= ${params.startDate}`);
-    }
-    if (params.endDate) {
-      query = query.where(sql`${LogsTable.timestamp} <= ${params.endDate}`);
-    }
 
     return await query;
   } catch (error) {

@@ -6,7 +6,7 @@ import "server-only";
 import { NextRequest } from "next/server";
 import { getSession } from "@/lib/auth/auth-instance";
 import { logSecurityEvent } from "@/lib/logs";
-import logger from "@/lib/logger";
+// import logger from "@/lib/logger"; // Unused import removed
 
 // EA_ prefix for Estimator Assistant
 const EA_SECURITY_AUDIT_ENABLED =

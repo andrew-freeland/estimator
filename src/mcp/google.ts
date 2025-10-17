@@ -62,6 +62,30 @@ interface GoogleDocContent {
   };
 }
 
+// Research-backed fix: Google API error handling and rate limiting
+async function handleGoogleAPIError(error: any, operation: string) {
+  if (error.code === 403 || error.code === 429) {
+    // Rate limit or quota exceeded
+    logger.warn(
+      `Google API rate limit/quota exceeded for ${operation}:`,
+      error.message,
+    );
+    throw new Error(`Google API rate limit exceeded. Please try again later.`);
+  } else if (error.code === 401) {
+    // Authentication error
+    logger.error(
+      `Google API authentication failed for ${operation}:`,
+      error.message,
+    );
+    throw new Error(
+      `Google API authentication failed. Please re-authenticate.`,
+    );
+  } else {
+    logger.error(`Google API error for ${operation}:`, error);
+    throw new Error(`Google API error: ${error.message || "Unknown error"}`);
+  }
+}
+
 // Helper function to set user credentials
 function setUserCredentials(accessToken: string, refreshToken?: string) {
   oauth2Client.setCredentials({
@@ -111,13 +135,15 @@ export const searchGoogleDriveTool: Tool = {
         searchQuery += ` and '${folderId}' in parents`;
       }
 
-      const response = await drive.files.list({
-        q: searchQuery,
-        pageSize: limit,
-        fields:
-          "files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink)",
-        orderBy: "modifiedTime desc",
-      });
+      const response = await drive.files
+        .list({
+          q: searchQuery,
+          pageSize: limit,
+          fields:
+            "files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink)",
+          orderBy: "modifiedTime desc",
+        })
+        .catch((error) => handleGoogleAPIError(error, "Drive files list"));
 
       const files = response.data.files as GoogleDriveFile[];
 
@@ -170,10 +196,12 @@ export const readGoogleSheetTool: Tool = {
     try {
       logger.info(`Reading Google Sheet: ${spreadsheetId}, range: ${range}`);
 
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range,
-      });
+      const response = await sheets.spreadsheets.values
+        .get({
+          spreadsheetId,
+          range,
+        })
+        .catch((error) => handleGoogleAPIError(error, "Sheets values get"));
 
       const data = response.data as GoogleSheetData;
       const values = data.values || [];
@@ -235,9 +263,11 @@ export const readGoogleDocTool: Tool = {
     try {
       logger.info(`Reading Google Doc: ${documentId}`);
 
-      const response = await docs.documents.get({
-        documentId,
-      });
+      const response = await docs.documents
+        .get({
+          documentId,
+        })
+        .catch((error) => handleGoogleAPIError(error, "Docs document get"));
 
       const doc = response.data as GoogleDocContent;
 
