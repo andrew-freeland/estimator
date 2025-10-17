@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "../db.pg";
+import { pgDb } from "../db.pg";
 import {
   ContractorProfileTable,
   type ContractorProfileEntity,
@@ -26,7 +26,7 @@ export const pgContractorProfileRepository = {
     laborPricingFile?: string;
     materialPricingFile?: string;
   }): Promise<ContractorProfileEntity> {
-    const [profile] = await db
+    const [profile] = await pgDb!
       .insert(ContractorProfileTable)
       .values({
         userId: data.userId,
@@ -55,7 +55,7 @@ export const pgContractorProfileRepository = {
   },
 
   async findByUserId(userId: string): Promise<ContractorProfileEntity | null> {
-    const [profile] = await db
+    const [profile] = await pgDb!
       .select()
       .from(ContractorProfileTable)
       .where(eq(ContractorProfileTable.userId, userId))
@@ -86,7 +86,7 @@ export const pgContractorProfileRepository = {
       materialPricingFile: string;
     }>,
   ): Promise<ContractorProfileEntity | null> {
-    const [profile] = await db
+    const [profile] = await pgDb!
       .update(ContractorProfileTable)
       .set({
         ...data,
@@ -99,7 +99,7 @@ export const pgContractorProfileRepository = {
   },
 
   async delete(userId: string): Promise<void> {
-    await db
+    await pgDb!
       .delete(ContractorProfileTable)
       .where(eq(ContractorProfileTable.userId, userId));
   },
