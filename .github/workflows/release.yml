@@ -1,9 +1,10 @@
 name: release-please
 
-on:
-  push:
-    branches:
-      - main
+# TEMPORARILY DISABLED - Causing branch conflicts with Vercel deployment
+# on:
+#   push:
+#     branches:
+#       - main
 
 permissions:
   contents: write
