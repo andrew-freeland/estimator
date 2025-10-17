@@ -189,7 +189,6 @@ async function checkWhisper(): Promise<HealthCheck> {
 
 async function checkExternalServices(): Promise<HealthCheck[]> {
   const checks: HealthCheck[] = [];
-
   // Check Google Maps if enabled
   if (config.EA_GOOGLE_MAPS_API_KEY) {
     const startTime = Date.now();

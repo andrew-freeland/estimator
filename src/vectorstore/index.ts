@@ -107,6 +107,7 @@ export class VectorStoreService {
       });
 
       logger.info(`Stored embedding for ${params.sourcePath}`);
+      return embeddingResult;
     } catch (error) {
       logger.error("Error storing embedding:", error);
       throw error;
@@ -170,9 +171,7 @@ export class VectorStoreService {
       const batchResults = await Promise.all(
         batch.map((request) => this.storeEmbedding(request)),
       );
-      if (batchResults) {
-        results.push(...batchResults);
-      }
+      results.push(...batchResults);
     }
 
     return results;

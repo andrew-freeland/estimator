@@ -3,7 +3,8 @@
 // Provides travel distance, time, and location-based cost modifiers
 
 import "server-only";
-import { Tool } from "ai";
+import { tool as createTool } from "ai";
+import { z } from "zod";
 import logger from "lib/logger";
 
 // EA_ prefix for Estimator Assistant
@@ -95,37 +96,31 @@ async function makeMapsRequest(
 }
 
 // Tool: Calculate travel distance and time
-export const calculateTravelDistanceTool: Tool = {
+export const calculateTravelDistanceTool = createTool({
   description:
     "Calculate travel distance and time between locations for cost estimation",
-  inputSchema: {
-    origins: {
-      type: "array",
-      items: { type: "string" },
-      description: "Array of origin addresses or coordinates",
-    },
-    destinations: {
-      type: "array",
-      items: { type: "string" },
-      description: "Array of destination addresses or coordinates",
-    },
-    mode: {
-      type: "string",
-      enum: ["driving", "walking", "bicycling", "transit"],
-      description: "Travel mode",
-      default: "driving",
-    },
-    avoid: {
-      type: "array",
-      items: { type: "string" },
-      description: "Route restrictions (tolls, highways, ferries, indoor)",
-    },
-    departureTime: {
-      type: "string",
-      description:
+  inputSchema: z.object({
+    origins: z
+      .array(z.string())
+      .describe("Array of origin addresses or coordinates"),
+    destinations: z
+      .array(z.string())
+      .describe("Array of destination addresses or coordinates"),
+    mode: z
+      .enum(["driving", "walking", "bicycling", "transit"])
+      .default("driving")
+      .describe("Travel mode"),
+    avoid: z
+      .array(z.string())
+      .optional()
+      .describe("Route restrictions (tolls, highways, ferries, indoor)"),
+    departureTime: z
+      .string()
+      .optional()
+      .describe(
         "Departure time in seconds since epoch (for traffic-aware routing)",
-    },
-  },
+      ),
+  }),
   execute: async (
     { origins, destinations, mode = "driving", avoid, departureTime },
     _options?: any,
@@ -228,21 +223,18 @@ export const calculateTravelDistanceTool: Tool = {
       };
     }
   },
-};
+});
 
 // Tool: Geocode addresses
-export const geocodeAddressTool: Tool = {
+export const geocodeAddressTool = createTool({
   description: "Convert addresses to coordinates and get location details",
-  inputSchema: {
-    address: {
-      type: "string",
-      description: "Address to geocode",
-    },
-    region: {
-      type: "string",
-      description: "Region code to bias results (e.g., 'us', 'ca')",
-    },
-  },
+  inputSchema: z.object({
+    address: z.string().describe("Address to geocode"),
+    region: z
+      .string()
+      .optional()
+      .describe("Region code to bias results (e.g., 'us', 'ca')"),
+  }),
   execute: async ({ address, region }, _options?: any) => {
     try {
       logger.info(`Geocoding address: ${address}`);
@@ -292,23 +284,18 @@ export const geocodeAddressTool: Tool = {
       };
     }
   },
-};
+});
 
 // Tool: Get place details
-export const getPlaceDetailsTool: Tool = {
+export const getPlaceDetailsTool = createTool({
   description: "Get detailed information about a place using its place ID",
-  inputSchema: {
-    placeId: {
-      type: "string",
-      description: "Google Places place ID",
-    },
-    fields: {
-      type: "array",
-      items: { type: "string" },
-      description: "Fields to return (name, rating, geometry, etc.)",
-      default: ["name", "formatted_address", "geometry", "place_id", "types"],
-    },
-  },
+  inputSchema: z.object({
+    placeId: z.string().describe("Google Places place ID"),
+    fields: z
+      .array(z.string())
+      .default(["name", "formatted_address", "geometry", "place_id", "types"])
+      .describe("Fields to return (name, rating, geometry, etc.)"),
+  }),
   execute: async (
     {
       placeId,
@@ -358,22 +345,16 @@ export const getPlaceDetailsTool: Tool = {
       };
     }
   },
-};
+});
 
 // Tool: Calculate location-based cost modifiers
-export const calculateLocationCostModifiersTool: Tool = {
+export const calculateLocationCostModifiersTool = createTool({
   description:
     "Calculate cost modifiers based on location (urban vs rural, cost of living, etc.)",
-  inputSchema: {
-    address: {
-      type: "string",
-      description: "Address to analyze for cost modifiers",
-    },
-    baseCost: {
-      type: "number",
-      description: "Base cost to apply modifiers to",
-    },
-  },
+  inputSchema: z.object({
+    address: z.string().describe("Address to analyze for cost modifiers"),
+    baseCost: z.number().describe("Base cost to apply modifiers to"),
+  }),
   execute: async ({ address, baseCost }, options?: any) => {
     try {
       logger.info(`Calculating location cost modifiers for: ${address}`);
@@ -384,8 +365,17 @@ export const calculateLocationCostModifiersTool: Tool = {
         options,
       );
 
-      if (!geocodeResult.success) {
-        return geocodeResult;
+      if (
+        !geocodeResult ||
+        typeof geocodeResult !== "object" ||
+        !("success" in geocodeResult) ||
+        !geocodeResult.success ||
+        !geocodeResult.data
+      ) {
+        return {
+          success: false,
+          error: "Failed to geocode address",
+        };
       }
 
       const location = geocodeResult.data.results[0];
@@ -420,7 +410,7 @@ export const calculateLocationCostModifiersTool: Tool = {
         component.types.includes("administrative_area_level_1"),
       );
 
-      if (state && highCostStates.includes(state.short_name)) {
+      if (state && highCostStates.includes(state.shortName)) {
         modifiers.costOfLiving = 1.3; // 30% higher in high-cost states
       }
 
@@ -434,7 +424,7 @@ export const calculateLocationCostModifiersTool: Tool = {
         modifiers,
         adjustedCost: baseCost ? baseCost * modifiers.total : null,
         locationType: isUrban ? "urban" : "rural",
-        state: state?.long_name,
+        state: state?.longName,
       };
 
       return {
@@ -452,7 +442,7 @@ export const calculateLocationCostModifiersTool: Tool = {
       };
     }
   },
-};
+});
 
 // Export all Maps tools
 export const mapsTools = {
