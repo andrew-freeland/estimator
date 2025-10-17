@@ -6,9 +6,9 @@
 
 import "server-only";
 import { Tool } from "ai";
-import logger from "lib/logger";
-import { RateLimiter, InputValidator } from "lib/security";
-import { logToolCall } from "lib/logs";
+import logger from "@/lib/logger";
+import { RateLimiter, InputValidator } from "@/lib/security";
+import { logToolCall } from "@/lib/logs";
 
 // EA_ prefix for Estimator Assistant
 const EA_BUILDERTREND_API_KEY = process.env.EA_BUILDERTREND_API_KEY;

@@ -22,7 +22,7 @@ import { Pool } from "pg";
 // TODO: Re-enable after database setup
 // import { vector } from "pgvector/pg";
 import { sql } from "drizzle-orm";
-import logger from "lib/logger";
+import logger from "@/lib/logger";
 
 // EA_ prefix for Estimator Assistant
 const EA_DATABASE_URL = process.env.EA_DATABASE_URL || process.env.DATABASE_URL;

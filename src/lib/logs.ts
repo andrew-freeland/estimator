@@ -3,10 +3,10 @@
 // Provides database-backed logging with JSON serialization
 
 import "server-only";
-import { db } from "lib/gcp/db";
-import { LogsTable } from "lib/db/pg/schema.pg";
+import { db } from "@/lib/gcp/db";
+import { LogsTable } from "@/lib/db/pg/schema.pg";
 import { sql } from "drizzle-orm";
-import logger from "lib/logger";
+import logger from "@/lib/logger";
 
 // EA_ prefix for Estimator Assistant
 const EA_LOG_BATCH_SIZE = parseInt(process.env.EA_LOG_BATCH_SIZE || "100");
