@@ -10,7 +10,8 @@ import logger from "lib/logger";
 // EA_ prefix for Estimator Assistant
 const EA_GOOGLE_CLIENT_ID = process.env.EA_GOOGLE_CLIENT_ID;
 const EA_GOOGLE_CLIENT_SECRET = process.env.EA_GOOGLE_CLIENT_SECRET;
-const _EA_GOOGLE_API_KEY = process.env.EA_GOOGLE_API_KEY;
+// Stack compliance update: Remove unused variable
+// const _EA_GOOGLE_API_KEY = process.env.EA_GOOGLE_API_KEY;
 
 if (!EA_GOOGLE_CLIENT_ID || !EA_GOOGLE_CLIENT_SECRET) {
   logger.warn(
@@ -97,31 +98,27 @@ function setUserCredentials(accessToken: string, refreshToken?: string) {
 // Tool: Search Google Drive files
 export const searchGoogleDriveTool: Tool = {
   description: "Search for files in Google Drive by name, type, or content",
-  parameters: {
-    type: "object",
-    properties: {
-      query: {
-        type: "string",
-        description: "Search query for file names or content",
-      },
-      mimeType: {
-        type: "string",
-        description:
-          "Filter by MIME type (e.g., 'application/vnd.google-apps.spreadsheet' for Sheets)",
-      },
-      folderId: {
-        type: "string",
-        description: "Search within a specific folder ID",
-      },
-      limit: {
-        type: "number",
-        description: "Maximum number of files to return",
-        default: 20,
-      },
+  inputSchema: {
+    query: {
+      type: "string",
+      description: "Search query for file names or content",
     },
-    required: ["query"],
+    mimeType: {
+      type: "string",
+      description:
+        "Filter by MIME type (e.g., 'application/vnd.google-apps.spreadsheet' for Sheets)",
+    },
+    folderId: {
+      type: "string",
+      description: "Search within a specific folder ID",
+    },
+    limit: {
+      type: "number",
+      description: "Maximum number of files to return",
+      default: 20,
+    },
   },
-  execute: async ({ query, mimeType, folderId, limit = 20 }) => {
+  execute: async ({ query, mimeType, folderId, limit = 20 }, _options?: any) => {
     try {
       logger.info(`Searching Google Drive for: ${query}`);
 
@@ -145,7 +142,7 @@ export const searchGoogleDriveTool: Tool = {
         })
         .catch((error) => handleGoogleAPIError(error, "Drive files list"));
 
-      const files = response.data.files as GoogleDriveFile[];
+      const files = (response?.data?.files as GoogleDriveFile[]) || [];
 
       return {
         success: true,
@@ -168,31 +165,26 @@ export const searchGoogleDriveTool: Tool = {
 // Tool: Read Google Sheets data
 export const readGoogleSheetTool: Tool = {
   description: "Read data from a Google Sheets spreadsheet",
-  parameters: {
-    type: "object",
-    properties: {
-      spreadsheetId: {
-        type: "string",
-        description: "The Google Sheets spreadsheet ID",
-      },
-      range: {
-        type: "string",
-        description: "The range to read (e.g., 'Sheet1!A1:Z100' or 'Sheet1')",
-        default: "Sheet1",
-      },
-      includeHeaders: {
-        type: "boolean",
-        description: "Whether to treat the first row as headers",
-        default: true,
-      },
+  inputSchema: {
+    spreadsheetId: {
+      type: "string",
+      description: "The Google Sheets spreadsheet ID",
     },
-    required: ["spreadsheetId"],
+    range: {
+      type: "string",
+      description: "The range to read (e.g., 'Sheet1!A1:Z100' or 'Sheet1')",
+      default: "Sheet1",
+    },
+    includeHeaders: {
+      type: "boolean",
+      description: "Whether to treat the first row as headers",
+      default: true,
+    },
   },
-  execute: async ({
-    spreadsheetId,
-    range = "Sheet1",
-    includeHeaders = true,
-  }) => {
+  execute: async (
+    { spreadsheetId, range = "Sheet1", includeHeaders = true },
+    _options?: any,
+  ) => {
     try {
       logger.info(`Reading Google Sheet: ${spreadsheetId}, range: ${range}`);
 
@@ -203,7 +195,7 @@ export const readGoogleSheetTool: Tool = {
         })
         .catch((error) => handleGoogleAPIError(error, "Sheets values get"));
 
-      const data = response.data as GoogleSheetData;
+      const data = response?.data as GoogleSheetData;
       const values = data.values || [];
 
       const result: any = {
@@ -244,22 +236,18 @@ export const readGoogleSheetTool: Tool = {
 // Tool: Read Google Docs content
 export const readGoogleDocTool: Tool = {
   description: "Read content from a Google Docs document",
-  parameters: {
-    type: "object",
-    properties: {
-      documentId: {
-        type: "string",
-        description: "The Google Docs document ID",
-      },
-      extractText: {
-        type: "boolean",
-        description: "Whether to extract plain text content",
-        default: true,
-      },
+  inputSchema: {
+    documentId: {
+      type: "string",
+      description: "The Google Docs document ID",
     },
-    required: ["documentId"],
+    extractText: {
+      type: "boolean",
+      description: "Whether to extract plain text content",
+      default: true,
+    },
   },
-  execute: async ({ documentId, extractText = true }) => {
+  execute: async ({ documentId, extractText = true }, _options?: any) => {
     try {
       logger.info(`Reading Google Doc: ${documentId}`);
 
@@ -269,7 +257,7 @@ export const readGoogleDocTool: Tool = {
         })
         .catch((error) => handleGoogleAPIError(error, "Docs document get"));
 
-      const doc = response.data as GoogleDocContent;
+      const doc = response?.data as GoogleDocContent;
 
       const result: any = {
         title: doc.title,
@@ -311,17 +299,13 @@ export const readGoogleDocTool: Tool = {
 // Tool: Get file metadata
 export const getGoogleFileMetadataTool: Tool = {
   description: "Get metadata for a Google Drive file",
-  parameters: {
-    type: "object",
-    properties: {
-      fileId: {
-        type: "string",
-        description: "The Google Drive file ID",
-      },
+  inputSchema: {
+    fileId: {
+      type: "string",
+      description: "The Google Drive file ID",
     },
-    required: ["fileId"],
   },
-  execute: async ({ fileId }) => {
+  execute: async ({ fileId }, _options?: any) => {
     try {
       logger.info(`Getting metadata for Google file: ${fileId}`);
 
@@ -356,22 +340,18 @@ export const getGoogleFileMetadataTool: Tool = {
 // Tool: Download file content
 export const downloadGoogleFileTool: Tool = {
   description: "Download content from a Google Drive file",
-  parameters: {
-    type: "object",
-    properties: {
-      fileId: {
-        type: "string",
-        description: "The Google Drive file ID",
-      },
-      exportFormat: {
-        type: "string",
-        description:
-          "Export format for Google Workspace files (e.g., 'text/plain', 'application/pdf')",
-      },
+  inputSchema: {
+    fileId: {
+      type: "string",
+      description: "The Google Drive file ID",
     },
-    required: ["fileId"],
+    exportFormat: {
+      type: "string",
+      description:
+        "Export format for Google Workspace files (e.g., 'text/plain', 'application/pdf')",
+    },
   },
-  execute: async ({ fileId, exportFormat }) => {
+  execute: async ({ fileId, exportFormat }, _options?: any) => {
     try {
       logger.info(`Downloading Google file: ${fileId}`);
 

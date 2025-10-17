@@ -1,0 +1,29 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": ".next/tsbuildinfo",
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitAny": false,
+    "strict": false
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/types/global.d.ts"],
+  "exclude": [
+    "node_modules",
+    "tests/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "vitest.setup.ts",
+    "vitest.config.ts",
+    "src/lib/ai/workflow/examples/**/*",
+    "src/app/(chat)/mcp/test/**/*",
+    "src/components/**/*.test.*",
+    "src/lib/**/*.test.*"
+  ]
+}

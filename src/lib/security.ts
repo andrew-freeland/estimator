@@ -95,8 +95,8 @@ export async function withSecurity<T>(
     if (requiredPermissions.length > 0) {
       const hasPermission = requiredPermissions.every(
         (permission) =>
-          securityContext.permissions.includes(permission) ||
-          securityContext.permissions.includes("admin:all"),
+          securityContext?.permissions.includes(permission) ||
+          securityContext?.permissions.includes("admin:all"),
       );
 
       if (!hasPermission) {

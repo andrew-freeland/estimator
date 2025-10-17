@@ -36,14 +36,21 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
     ".next/types/**/*.ts",
     "src/types/global.d.ts",
+    "drizzle.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
     "vitest.setup.ts",
     "vitest.config.ts",
-    "drizzle.config.ts",
-    "tests/**/*.ts"
-  ],
-  "exclude": ["node_modules"]
+    "src/lib/ai/workflow/examples/**/*"
+  ]
 }

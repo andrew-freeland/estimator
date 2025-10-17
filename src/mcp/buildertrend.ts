@@ -147,29 +147,25 @@ async function makeBuildertrendRequest(
 export const getBuildertrendJobTool: Tool = {
   description:
     "Get detailed information about a specific Buildertrend job including client, schedule, and cost data",
-  parameters: {
-    type: "object",
-    properties: {
-      jobId: {
-        type: "string",
-        description: "The Buildertrend job ID to retrieve information for",
-      },
-      includeSchedule: {
-        type: "boolean",
-        description: "Whether to include schedule/task information",
-        default: true,
-      },
-      includeCosts: {
-        type: "boolean",
-        description: "Whether to include cost information",
-        default: true,
-      },
+  inputSchema: {
+    jobId: {
+      type: "string",
+      description: "The Buildertrend job ID to retrieve information for",
     },
-    required: ["jobId"],
+    includeSchedule: {
+      type: "boolean",
+      description: "Whether to include schedule/task information",
+      default: true,
+    },
+    includeCosts: {
+      type: "boolean",
+      description: "Whether to include cost information",
+      default: true,
+    },
   },
   execute: async (
     { jobId, includeSchedule = true, includeCosts = true },
-    context?: { userId: string; clientId: string; sessionId: string },
+    options?: any,
   ) => {
     try {
       // Input validation
@@ -183,7 +179,7 @@ export const getBuildertrendJobTool: Tool = {
       const job = (await makeBuildertrendRequest(
         `/jobs/${jobId}`,
         undefined,
-        context,
+        options,
       )) as BuildertrendJob;
 
       const result: any = {
@@ -198,7 +194,7 @@ export const getBuildertrendJobTool: Tool = {
           result.schedule = (await makeBuildertrendRequest(
             `/jobs/${jobId}/schedule`,
             undefined,
-            context,
+            options,
           )) as BuildertrendSchedule[];
         } catch (error) {
           logger.warn(`Failed to fetch schedule for job ${jobId}:`, error);
@@ -211,7 +207,7 @@ export const getBuildertrendJobTool: Tool = {
           result.costs = (await makeBuildertrendRequest(
             `/jobs/${jobId}/costs`,
             undefined,
-            context,
+            options,
           )) as BuildertrendCost[];
         } catch (error) {
           logger.warn(`Failed to fetch costs for job ${jobId}:`, error);
@@ -236,36 +232,33 @@ export const getBuildertrendJobTool: Tool = {
 export const searchBuildertrendJobsTool: Tool = {
   description:
     "Search Buildertrend jobs by various criteria like client, date range, or status",
-  parameters: {
-    type: "object",
-    properties: {
-      clientId: {
-        type: "string",
-        description: "Filter by client ID",
-      },
-      status: {
-        type: "string",
-        description:
-          "Filter by job status (e.g., 'Active', 'Completed', 'On Hold')",
-      },
-      startDate: {
-        type: "string",
-        description: "Filter jobs starting after this date (YYYY-MM-DD)",
-      },
-      endDate: {
-        type: "string",
-        description: "Filter jobs ending before this date (YYYY-MM-DD)",
-      },
-      limit: {
-        type: "number",
-        description: "Maximum number of jobs to return",
-        default: 50,
-      },
+  inputSchema: {
+    clientId: {
+      type: "string",
+      description: "Filter by client ID",
+    },
+    status: {
+      type: "string",
+      description:
+        "Filter by job status (e.g., 'Active', 'Completed', 'On Hold')",
+    },
+    startDate: {
+      type: "string",
+      description: "Filter jobs starting after this date (YYYY-MM-DD)",
+    },
+    endDate: {
+      type: "string",
+      description: "Filter jobs ending before this date (YYYY-MM-DD)",
+    },
+    limit: {
+      type: "number",
+      description: "Maximum number of jobs to return",
+      default: 50,
     },
   },
   execute: async (
     { clientId, status, startDate, endDate, limit = 50 },
-    context?: { userId: string; clientId: string; sessionId: string },
+    options?: any,
   ) => {
     try {
       // Input validation
@@ -287,7 +280,7 @@ export const searchBuildertrendJobsTool: Tool = {
       const jobs = (await makeBuildertrendRequest(
         "/jobs",
         params,
-        context,
+        options,
       )) as BuildertrendJob[];
 
       return {
@@ -311,36 +304,33 @@ export const searchBuildertrendJobsTool: Tool = {
 export const getBuildertrendHistoricalCostsTool: Tool = {
   description:
     "Get historical cost data for similar jobs or categories to help with estimation",
-  parameters: {
-    type: "object",
-    properties: {
-      category: {
-        type: "string",
-        description:
-          "Cost category to search for (e.g., 'Labor', 'Materials', 'Equipment')",
-      },
-      item: {
-        type: "string",
-        description: "Specific item or service to get historical costs for",
-      },
-      startDate: {
-        type: "string",
-        description: "Start date for historical data (YYYY-MM-DD)",
-      },
-      endDate: {
-        type: "string",
-        description: "End date for historical data (YYYY-MM-DD)",
-      },
-      limit: {
-        type: "number",
-        description: "Maximum number of cost records to return",
-        default: 100,
-      },
+  inputSchema: {
+    category: {
+      type: "string",
+      description:
+        "Cost category to search for (e.g., 'Labor', 'Materials', 'Equipment')",
+    },
+    item: {
+      type: "string",
+      description: "Specific item or service to get historical costs for",
+    },
+    startDate: {
+      type: "string",
+      description: "Start date for historical data (YYYY-MM-DD)",
+    },
+    endDate: {
+      type: "string",
+      description: "End date for historical data (YYYY-MM-DD)",
+    },
+    limit: {
+      type: "number",
+      description: "Maximum number of cost records to return",
+      default: 100,
     },
   },
   execute: async (
     { category, item, startDate, endDate, limit = 100 },
-    context?: { userId: string; clientId: string; sessionId: string },
+    options?: any,
   ) => {
     try {
       // Input validation
@@ -359,7 +349,7 @@ export const getBuildertrendHistoricalCostsTool: Tool = {
       const costs = (await makeBuildertrendRequest(
         "/costs/historical",
         params,
-        context,
+        options,
       )) as BuildertrendCost[];
 
       // Calculate average costs by category/item

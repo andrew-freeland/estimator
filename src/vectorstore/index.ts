@@ -59,7 +59,7 @@ export class VectorStoreService {
       );
 
       const { embedding } = await embed({
-        model: openai.embedding(config.aiConfig.embeddingModel),
+        model: openai.embedding(config.EA_EMBEDDING_MODEL),
         value: request.text,
       });
 
@@ -164,13 +164,15 @@ export class VectorStoreService {
     const results = [];
 
     // Process in batches to avoid overwhelming the API
-    const batchSize = config.performanceConfig.embeddingBatchSize;
+    const batchSize = 10; // Stack compliance update: Use fixed batch size
     for (let i = 0; i < requests.length; i += batchSize) {
       const batch = requests.slice(i, i + batchSize);
       const batchResults = await Promise.all(
         batch.map((request) => this.storeEmbedding(request)),
       );
-      results.push(...batchResults);
+      if (batchResults) {
+        results.push(...batchResults);
+      }
     }
 
     return results;

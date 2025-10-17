@@ -98,45 +98,38 @@ async function makeMapsRequest(
 export const calculateTravelDistanceTool: Tool = {
   description:
     "Calculate travel distance and time between locations for cost estimation",
-  parameters: {
-    type: "object",
-    properties: {
-      origins: {
-        type: "array",
-        items: { type: "string" },
-        description: "Array of origin addresses or coordinates",
-      },
-      destinations: {
-        type: "array",
-        items: { type: "string" },
-        description: "Array of destination addresses or coordinates",
-      },
-      mode: {
-        type: "string",
-        enum: ["driving", "walking", "bicycling", "transit"],
-        description: "Travel mode",
-        default: "driving",
-      },
-      avoid: {
-        type: "array",
-        items: { type: "string" },
-        description: "Route restrictions (tolls, highways, ferries, indoor)",
-      },
-      departureTime: {
-        type: "string",
-        description:
-          "Departure time in seconds since epoch (for traffic-aware routing)",
-      },
+  inputSchema: {
+    origins: {
+      type: "array",
+      items: { type: "string" },
+      description: "Array of origin addresses or coordinates",
     },
-    required: ["origins", "destinations"],
+    destinations: {
+      type: "array",
+      items: { type: "string" },
+      description: "Array of destination addresses or coordinates",
+    },
+    mode: {
+      type: "string",
+      enum: ["driving", "walking", "bicycling", "transit"],
+      description: "Travel mode",
+      default: "driving",
+    },
+    avoid: {
+      type: "array",
+      items: { type: "string" },
+      description: "Route restrictions (tolls, highways, ferries, indoor)",
+    },
+    departureTime: {
+      type: "string",
+      description:
+        "Departure time in seconds since epoch (for traffic-aware routing)",
+    },
   },
-  execute: async ({
-    origins,
-    destinations,
-    mode = "driving",
-    avoid,
-    departureTime,
-  }) => {
+  execute: async (
+    { origins, destinations, mode = "driving", avoid, departureTime },
+    _options?: any,
+  ) => {
     try {
       logger.info(
         `Calculating travel distance from ${origins.join(", ")} to ${destinations.join(", ")}`,
@@ -240,21 +233,17 @@ export const calculateTravelDistanceTool: Tool = {
 // Tool: Geocode addresses
 export const geocodeAddressTool: Tool = {
   description: "Convert addresses to coordinates and get location details",
-  parameters: {
-    type: "object",
-    properties: {
-      address: {
-        type: "string",
-        description: "Address to geocode",
-      },
-      region: {
-        type: "string",
-        description: "Region code to bias results (e.g., 'us', 'ca')",
-      },
+  inputSchema: {
+    address: {
+      type: "string",
+      description: "Address to geocode",
     },
-    required: ["address"],
+    region: {
+      type: "string",
+      description: "Region code to bias results (e.g., 'us', 'ca')",
+    },
   },
-  execute: async ({ address, region }) => {
+  execute: async ({ address, region }, _options?: any) => {
     try {
       logger.info(`Geocoding address: ${address}`);
 
@@ -308,26 +297,25 @@ export const geocodeAddressTool: Tool = {
 // Tool: Get place details
 export const getPlaceDetailsTool: Tool = {
   description: "Get detailed information about a place using its place ID",
-  parameters: {
-    type: "object",
-    properties: {
-      placeId: {
-        type: "string",
-        description: "Google Places place ID",
-      },
-      fields: {
-        type: "array",
-        items: { type: "string" },
-        description: "Fields to return (name, rating, geometry, etc.)",
-        default: ["name", "formatted_address", "geometry", "place_id", "types"],
-      },
+  inputSchema: {
+    placeId: {
+      type: "string",
+      description: "Google Places place ID",
     },
-    required: ["placeId"],
+    fields: {
+      type: "array",
+      items: { type: "string" },
+      description: "Fields to return (name, rating, geometry, etc.)",
+      default: ["name", "formatted_address", "geometry", "place_id", "types"],
+    },
   },
-  execute: async ({
-    placeId,
-    fields = ["name", "formatted_address", "geometry", "place_id", "types"],
-  }) => {
+  execute: async (
+    {
+      placeId,
+      fields = ["name", "formatted_address", "geometry", "place_id", "types"],
+    },
+    _options?: any,
+  ) => {
     try {
       logger.info(`Getting place details for: ${placeId}`);
 
@@ -376,26 +364,25 @@ export const getPlaceDetailsTool: Tool = {
 export const calculateLocationCostModifiersTool: Tool = {
   description:
     "Calculate cost modifiers based on location (urban vs rural, cost of living, etc.)",
-  parameters: {
-    type: "object",
-    properties: {
-      address: {
-        type: "string",
-        description: "Address to analyze for cost modifiers",
-      },
-      baseCost: {
-        type: "number",
-        description: "Base cost to apply modifiers to",
-      },
+  inputSchema: {
+    address: {
+      type: "string",
+      description: "Address to analyze for cost modifiers",
     },
-    required: ["address"],
+    baseCost: {
+      type: "number",
+      description: "Base cost to apply modifiers to",
+    },
   },
-  execute: async ({ address, baseCost }) => {
+  execute: async ({ address, baseCost }, options?: any) => {
     try {
       logger.info(`Calculating location cost modifiers for: ${address}`);
 
       // First geocode the address
-      const geocodeResult = await geocodeAddressTool.execute({ address });
+      const geocodeResult = await geocodeAddressTool.execute?.(
+        { address },
+        options,
+      );
 
       if (!geocodeResult.success) {
         return geocodeResult;
