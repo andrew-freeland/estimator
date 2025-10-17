@@ -21,6 +21,7 @@ import { streamText } from "ai";
 // import { vectorStoreService } from "@/vectorstore";
 import logger from "@/lib/logger";
 import { aiConfig } from "@/lib/config";
+import { customModelProvider } from "@/lib/ai/models";
 
 export async function POST(request: Request) {
   try {
@@ -39,12 +40,13 @@ export async function POST(request: Request) {
 
     // SIMPLIFIED: Direct LLM response without agent processing
     // TODO: Replace with processEstimatorMessage() after restoring agent system
+    const model = customModelProvider.getModel({
+      provider: "openai",
+      model: aiConfig.explainerModel, // Uses "gpt-5" from config
+    });
+
     return streamText({
-      model: {
-        provider: "openai",
-        modelId: aiConfig.explainerModel, // Uses "gpt-5" from config
-      },
-      apiKey: aiConfig.openaiApiKey,
+      model,
       messages: [
         {
           role: "system",
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
         },
         ...messages,
       ],
-    }).toDataStreamResponse();
+    }).toTextStreamResponse();
   } catch (error) {
     logger.error("Error in estimator chat API:", error);
     return new Response("Internal server error", { status: 500 });
