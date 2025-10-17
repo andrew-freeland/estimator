@@ -11,7 +11,9 @@ export async function getStorageInfoAction() {
   return {
     type: storageDriver,
     supportsDirectUpload:
-      storageDriver === "vercel-blob" || storageDriver === "s3",
+      storageDriver === "vercel-blob" ||
+      storageDriver === "s3" ||
+      storageDriver === "gcs",
   };
 }
 
@@ -56,15 +58,30 @@ export async function checkStorageAction(): Promise<StorageCheckResult> {
     };
   }
 
-  // 3. Validate storage driver
-  if (!["vercel-blob", "s3"].includes(storageDriver)) {
+  // 3. Check GCS configuration
+  if (storageDriver === "gcs") {
+    if (!process.env.EA_GCS_BUCKET_NAME) {
+      return {
+        isValid: false,
+        error: "EA_GCS_BUCKET_NAME is not set",
+        solution:
+          "Please configure Google Cloud Storage:\n" +
+          "1. Set EA_GCS_BUCKET_NAME environment variable\n" +
+          "2. Ensure proper GCP authentication is configured",
+      };
+    }
+  }
+
+  // 4. Validate storage driver
+  if (!["vercel-blob", "s3", "gcs"].includes(storageDriver)) {
     return {
       isValid: false,
       error: `Invalid storage driver: ${storageDriver}`,
       solution:
         "FILE_STORAGE_TYPE must be one of:\n" +
         "- 'vercel-blob' (default)\n" +
-        "- 's3' (coming soon)",
+        "- 's3' (coming soon)\n" +
+        "- 'gcs' (Google Cloud Storage)",
     };
   }
 
