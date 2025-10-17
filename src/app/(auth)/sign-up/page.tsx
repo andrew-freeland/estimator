@@ -3,6 +3,11 @@ import { getAuthConfig } from "auth/config";
 import { getIsFirstUser } from "lib/auth/server";
 import { redirect } from "next/navigation";
 
+// Force dynamic rendering to avoid build-time database calls
+export const dynamic = "force-dynamic";
+// Use Node.js runtime for database access
+export const runtime = "nodejs";
+
 export default async function SignUp() {
   const isFirstUser = await getIsFirstUser();
   const {
