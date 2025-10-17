@@ -26,8 +26,8 @@ import logger from "@/lib/logger";
 
 // EA_ prefix for Estimator Assistant
 const EA_DATABASE_URL = process.env.EA_DATABASE_URL || process.env.DATABASE_URL;
-const _EA_GCP_PROJECT_ID = process.env.EA_GCP_PROJECT_ID;
-const _EA_GCP_REGION = process.env.EA_GCP_REGION;
+// const _EA_GCP_PROJECT_ID = process.env.EA_GCP_PROJECT_ID;
+// const _EA_GCP_REGION = process.env.EA_GCP_REGION;
 
 if (!EA_DATABASE_URL) {
   throw new Error(
@@ -284,7 +284,7 @@ export async function checkDatabaseHealth() {
 // Graceful shutdown
 export async function closeDatabaseConnection() {
   try {
-    await client.end();
+    await pool.end();
     logger.info("Database connection closed");
   } catch (error) {
     logger.error("Error closing database connection:", error);

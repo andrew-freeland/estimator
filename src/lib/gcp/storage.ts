@@ -86,7 +86,7 @@ const getFileInfo = async (key: string) => {
     const [metadata] = await bucket.file(key).getMetadata();
     return {
       contentType: metadata.contentType || "application/octet-stream",
-      size: parseInt(metadata.size || "0"),
+      size: parseInt(String(metadata.size || "0")),
       uploadedAt: metadata.timeCreated
         ? new Date(metadata.timeCreated)
         : undefined,
@@ -191,8 +191,9 @@ export const createGCSFileStorage = (): FileStorage => {
       });
 
       return {
-        uploadUrl: signedUrl,
+        url: signedUrl,
         key: pathname,
+        method: "PUT" as const,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
       };
     },
