@@ -3,11 +3,14 @@
 // Just connects to OpenAI without complex agents
 
 import { streamText } from "ai";
-import { aiConfig } from "@/lib/config";
+import { env, validateEnv } from "@/lib/env";
 import { customModelProvider } from "@/lib/ai/models";
 
 export async function POST(request: Request) {
   try {
+    // Validate environment variables at runtime
+    validateEnv();
+
     const { messages } = await request.json();
 
     if (!messages || !Array.isArray(messages)) {
@@ -20,9 +23,9 @@ export async function POST(request: Request) {
     }
 
     // AI SDK model fix
-    const model = customModelProvider.getModel({
+    const model = await customModelProvider.getModel({
       provider: "openai",
-      model: aiConfig.explainerModel, // Uses "gpt-5" from config
+      model: env.EA_EXPLAINER_MODEL, // Uses "gpt-4o" from env
     });
 
     // Simple streaming response - no complex agents, no database

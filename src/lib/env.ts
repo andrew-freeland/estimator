@@ -1,21 +1,18 @@
-// @module: config
-// Centralized configuration management for Estimator Assistant MCP
-// Provides type-safe environment variable access with build-safe validation
+// @module: env
+// Build-safe environment variable validator
+// Validates required environment variables with helpful error messages
 
 import "server-only";
 import { z } from "zod";
 
 // Helper to detect if we're in a build context
 const isBuildTime = () => {
-  // During Next.js build, process.env.NODE_ENV might not be set yet
-  // or we might be in static generation phase
   return (
     typeof window === "undefined" &&
     (process.env.NEXT_PHASE === "phase-production-build" ||
       process.env.NEXT_PHASE === "phase-production-server" ||
       process.env.VERCEL_ENV === "production" ||
-      !process.env.NODE_ENV ||
-      process.env.NODE_ENV === "production")
+      !process.env.NODE_ENV)
   );
 };
 
@@ -27,17 +24,17 @@ const envSchema = z.object({
     .default("development"),
   BASE_URL: z.string().url().default("http://localhost:3000"),
 
-  // Database configuration - make optional during build
-  DATABASE_URL: z.string().url().optional(),
+  // Database configuration
+  DATABASE_URL: z.string().url(),
   EA_DATABASE_URL: z.string().url().optional(),
 
-  // GCP configuration - make optional during build
-  EA_GCP_PROJECT_ID: z.string().min(1).optional(),
+  // GCP configuration
+  EA_GCP_PROJECT_ID: z.string().min(1),
   EA_GCP_REGION: z.string().default("us-central1"),
-  EA_GCS_BUCKET_NAME: z.string().min(1).optional(),
+  EA_GCS_BUCKET_NAME: z.string().min(1),
 
-  // AI/LLM configuration - make optional during build
-  OPENAI_API_KEY: z.string().min(1).optional(),
+  // AI/LLM configuration
+  OPENAI_API_KEY: z.string().min(1),
   EA_EMBEDDING_MODEL: z.string().default("text-embedding-3-large"),
   EA_TRANSCRIPTION_MODEL: z.string().default("whisper-1"),
   EA_EXPLAINER_MODEL: z.string().default("gpt-4o"),
@@ -50,8 +47,8 @@ const envSchema = z.object({
   // Google Maps integration
   EA_GOOGLE_MAPS_API_KEY: z.string().optional(),
 
-  // Authentication & security - make optional during build
-  BETTER_AUTH_SECRET: z.string().min(32).optional(),
+  // Authentication & security
+  BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url().optional(),
 
   // File storage configuration
@@ -98,21 +95,20 @@ const envSchema = z.object({
   ENABLE_VECTOR_SEARCH: z.string().optional(),
 });
 
-// Runtime validation schema (stricter requirements)
-const runtimeEnvSchema = envSchema.extend({
-  // Required at runtime
-  DATABASE_URL: z.string().url(),
-  EA_GCP_PROJECT_ID: z.string().min(1),
-  EA_GCS_BUCKET_NAME: z.string().min(1),
-  OPENAI_API_KEY: z.string().min(1),
-  BETTER_AUTH_SECRET: z.string().min(32),
+// Build-time schema (relaxed requirements)
+const buildTimeSchema = envSchema.partial({
+  DATABASE_URL: true,
+  EA_GCP_PROJECT_ID: true,
+  EA_GCS_BUCKET_NAME: true,
+  OPENAI_API_KEY: true,
+  BETTER_AUTH_SECRET: true,
 });
 
 // Parse and validate environment variables
 const parseEnv = () => {
   try {
     // Use different schema based on context
-    const schema = isBuildTime() ? envSchema : runtimeEnvSchema;
+    const schema = isBuildTime() ? buildTimeSchema : envSchema;
     return schema.parse(process.env);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -151,89 +147,18 @@ const parseEnv = () => {
   }
 };
 
-// Export validated configuration
-export const config = parseEnv();
+// Export validated environment variables
+export const env = parseEnv();
 
-// Helper functions for common configuration checks
-export const isDevelopment = config.NODE_ENV === "development";
-export const isProduction = config.NODE_ENV === "production";
-export const isTest = config.NODE_ENV === "test";
-
-export const isVercel = Boolean(config.VERCEL);
-export const isDocker = Boolean(process.env.DOCKER_BUILD);
-
-// Feature flags
-export const features = {
-  voiceTranscription: config.ENABLE_VOICE_TRANSCRIPTION === "true",
-  googleWorkspace: config.ENABLE_GOOGLE_WORKSPACE === "true",
-  maps: config.ENABLE_MAPS === "true",
-  vectorSearch: config.ENABLE_VECTOR_SEARCH === "true",
-};
-
-// Database configuration
-export const dbConfig = {
-  url: config.EA_DATABASE_URL || config.DATABASE_URL,
-  testUrl: config.TEST_DATABASE_URL,
-};
-
-// GCP configuration
-export const gcpConfig = {
-  projectId: config.EA_GCP_PROJECT_ID,
-  region: config.EA_GCP_REGION,
-  storageBucket: config.EA_GCS_BUCKET_NAME,
-};
-
-// AI configuration
-export const aiConfig = {
-  openaiApiKey: config.OPENAI_API_KEY,
-  embeddingModel: config.EA_EMBEDDING_MODEL,
-  transcriptionModel: config.EA_TRANSCRIPTION_MODEL,
-  explainerModel: config.EA_EXPLAINER_MODEL,
-};
-
-// External service configuration
-export const externalServices = {
-  google: {
-    clientId: config.EA_GOOGLE_CLIENT_ID,
-    clientSecret: config.EA_GOOGLE_CLIENT_SECRET,
-    apiKey: config.EA_GOOGLE_API_KEY,
-  },
-  maps: {
-    apiKey: config.EA_GOOGLE_MAPS_API_KEY,
-  },
-};
-
-// File storage configuration
-export const storageConfig = {
-  type: config.FILE_STORAGE_TYPE,
-  maxFileSize: config.MAX_FILE_SIZE,
-  aws: {
-    accessKeyId: config.AWS_ACCESS_KEY_ID,
-    secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
-    region: config.AWS_REGION,
-    bucket: config.AWS_S3_BUCKET,
-  },
-};
-
-// Performance configuration
-export const performanceConfig = {
-  maxConcurrentEmbeddings: config.MAX_CONCURRENT_EMBEDDINGS,
-  embeddingBatchSize: config.EMBEDDING_BATCH_SIZE,
-  maxFileSize: config.MAX_FILE_SIZE,
-};
-
-// Logging configuration
-export const loggingConfig = {
-  level: config.LOG_LEVEL,
-  structured: config.STRUCTURED_LOGGING === "true",
-  debug: config.DEBUG,
-};
+// Helper functions
+export const isDevelopment = env.NODE_ENV === "development";
+export const isProduction = env.NODE_ENV === "production";
+export const isTest = env.NODE_ENV === "test";
 
 // Runtime validation function - call this explicitly when needed
-export const validateRuntimeConfig = () => {
-  // Re-parse with runtime schema to ensure all required vars are present
+export const validateEnv = () => {
   try {
-    runtimeEnvSchema.parse(process.env);
+    envSchema.parse(process.env);
   } catch (error) {
     if (error instanceof z.ZodError) {
       const missingVars = error.issues
@@ -252,7 +177,7 @@ export const validateRuntimeConfig = () => {
         )
         .map((err) => `${err.path.join(".")}: ${err.message}`);
 
-      let errorMessage = "Runtime environment configuration error:\n";
+      let errorMessage = "Runtime environment validation failed:\n";
 
       if (missingVars.length > 0) {
         errorMessage += `\nMissing required variables:\n${missingVars.map((v) => `  - ${v}`).join("\n")}`;
@@ -269,46 +194,4 @@ export const validateRuntimeConfig = () => {
     }
     throw error;
   }
-
-  // Additional business logic validation
-  const errors: string[] = [];
-
-  // Check required services based on feature flags
-  if (
-    features.googleWorkspace &&
-    (!externalServices.google.clientId || !externalServices.google.clientSecret)
-  ) {
-    errors.push(
-      "Google Workspace integration enabled but missing OAuth credentials",
-    );
-  }
-
-  if (features.maps && !externalServices.maps.apiKey) {
-    errors.push("Maps integration enabled but missing API key");
-  }
-
-  // Check file storage configuration
-  if (
-    storageConfig.type === "s3" &&
-    (!storageConfig.aws.accessKeyId ||
-      !storageConfig.aws.secretAccessKey ||
-      !storageConfig.aws.bucket)
-  ) {
-    errors.push(
-      "S3 storage configured but missing AWS credentials or bucket name",
-    );
-  }
-
-  if (storageConfig.type === "gcs" && !gcpConfig.storageBucket) {
-    errors.push("GCS storage configured but missing bucket name");
-  }
-
-  if (errors.length > 0) {
-    throw new Error(
-      `Configuration validation failed:\n${errors.map((e) => `  - ${e}`).join("\n")}`,
-    );
-  }
 };
-
-// Legacy function for backward compatibility
-export const validateConfig = validateRuntimeConfig;

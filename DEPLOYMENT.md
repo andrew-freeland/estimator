@@ -308,6 +308,130 @@ module.exports = withBundleAnalyzer({
 
 ## Environment Configuration
 
+### Build-Safe Environment Validator
+
+The application includes a centralized environment validator (`src/lib/env.ts`) that ensures all required environment variables are properly configured while remaining build-safe.
+
+#### Key Features
+
+- **Build-Safe**: Uses relaxed validation during build time to prevent build failures
+- **Runtime Validation**: Strict validation when the application actually runs
+- **Type Safety**: Full TypeScript support with Zod validation
+- **Clear Error Messages**: Helpful error messages for missing or invalid variables
+
+#### Usage Pattern
+
+```typescript
+// Import the validated environment variables
+import { env, validateEnv } from "@/lib/env";
+
+// In API routes, validate at runtime
+export async function POST(request: Request) {
+  try {
+    // Validate environment variables at runtime
+    validateEnv();
+    
+    // Use validated environment variables
+    const model = await customModelProvider.getModel({
+      provider: "openai",
+      model: env.EA_EXPLAINER_MODEL,
+    });
+    
+    // ... rest of your code
+  } catch (error) {
+    // Handle validation errors
+  }
+}
+```
+
+#### Required Environment Variables
+
+The validator ensures these variables are present and valid:
+
+**Core Application:**
+- `NODE_ENV`: Application environment (development, production, test)
+- `BASE_URL`: Base URL for the application
+
+**Database:**
+- `DATABASE_URL`: Primary database connection string
+- `EA_DATABASE_URL`: EA-specific database URL (optional, overrides DATABASE_URL)
+
+**Google Cloud Platform:**
+- `EA_GCP_PROJECT_ID`: GCP project ID
+- `EA_GCP_REGION`: GCP region (defaults to us-central1)
+- `EA_GCS_BUCKET_NAME`: Google Cloud Storage bucket name
+
+**AI/LLM Configuration:**
+- `OPENAI_API_KEY`: OpenAI API key for LLM and embeddings
+- `EA_EMBEDDING_MODEL`: Embedding model (defaults to text-embedding-3-large)
+- `EA_TRANSCRIPTION_MODEL`: Transcription model (defaults to whisper-1)
+- `EA_EXPLAINER_MODEL`: Explainer agent model (defaults to gpt-4o)
+
+**Authentication:**
+- `BETTER_AUTH_SECRET`: Authentication secret (minimum 32 characters)
+
+**Optional Services:**
+- `EA_GOOGLE_CLIENT_ID`: Google OAuth client ID
+- `EA_GOOGLE_CLIENT_SECRET`: Google OAuth client secret
+- `EA_GOOGLE_API_KEY`: Google API key
+- `EA_GOOGLE_MAPS_API_KEY`: Google Maps API key
+- `REDIS_URL`: Redis connection string for caching
+
+#### Example .env.local
+
+```bash
+# Core Configuration
+NODE_ENV=development
+BASE_URL=http://localhost:3000
+
+# Database
+DATABASE_URL=postgresql://username:password@localhost:5432/estimator_assistant
+EA_DATABASE_URL=postgresql://username:password@localhost:5432/estimator_assistant
+
+# GCP Configuration
+EA_GCP_PROJECT_ID=your-gcp-project-id
+EA_GCP_REGION=us-central1
+EA_GCS_BUCKET_NAME=estimator-assistant-files
+
+# AI/LLM Configuration
+OPENAI_API_KEY=sk-your-openai-api-key
+EA_EMBEDDING_MODEL=text-embedding-3-large
+EA_TRANSCRIPTION_MODEL=whisper-1
+EA_EXPLAINER_MODEL=gpt-4o
+
+# Authentication
+BETTER_AUTH_SECRET=your-super-secure-secret-key-here
+BETTER_AUTH_URL=http://localhost:3000
+
+# Optional Services
+EA_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+EA_GOOGLE_CLIENT_ID=your-google-client-id
+EA_GOOGLE_CLIENT_SECRET=your-google-client-secret
+EA_GOOGLE_API_KEY=your-google-api-key
+REDIS_URL=redis://localhost:6379
+
+# Feature Flags
+ENABLE_VOICE_TRANSCRIPTION=true
+ENABLE_GOOGLE_WORKSPACE=true
+ENABLE_MAPS=true
+ENABLE_VECTOR_SEARCH=true
+```
+
+#### Validation Behavior
+
+- **Build Time**: Relaxed validation - only validates format, not presence of required variables
+- **Runtime**: Strict validation - ensures all required variables are present and valid
+- **Error Messages**: Clear, actionable error messages indicating which variables are missing or invalid
+
+#### Integration Points
+
+The environment validator is automatically imported and used in:
+- API routes (`src/app/api/*/route.ts`)
+- Server-side utilities (`src/lib/*`)
+- Health check endpoints
+- Database connections
+- External service integrations
+
 ### Required Environment Variables
 
 **Core Application**

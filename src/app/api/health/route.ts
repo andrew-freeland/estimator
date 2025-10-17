@@ -6,7 +6,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { checkDatabaseHealth } from "@/lib/gcp/db";
 import { gcsFileStorage } from "@/lib/gcp/storage";
-import { config } from "@/lib/config";
+import { env, validateEnv } from "@/lib/env";
 import logger from "@/lib/logger";
 
 // Health check interfaces
@@ -41,7 +41,7 @@ async function checkDatabase(): Promise<HealthCheck> {
       responseTime,
       details: {
         type: "postgresql",
-        url: config.EA_DATABASE_URL ? "configured" : "not configured",
+        url: env.EA_DATABASE_URL ? "configured" : "not configured",
       },
     };
   } catch (error) {
@@ -81,9 +81,9 @@ async function checkGCS(): Promise<HealthCheck> {
       status: "healthy",
       responseTime,
       details: {
-        bucket: config.EA_GCS_BUCKET_NAME,
-        project: config.EA_GCP_PROJECT_ID,
-        region: config.EA_GCP_REGION,
+        bucket: env.EA_GCS_BUCKET_NAME,
+        project: env.EA_GCP_PROJECT_ID,
+        region: env.EA_GCP_REGION,
       },
     };
   } catch (error) {
@@ -93,8 +93,8 @@ async function checkGCS(): Promise<HealthCheck> {
       responseTime: Date.now() - startTime,
       error: error instanceof Error ? error.message : "Unknown error",
       details: {
-        bucket: config.EA_GCS_BUCKET_NAME,
-        project: config.EA_GCP_PROJECT_ID,
+        bucket: env.EA_GCS_BUCKET_NAME,
+        project: env.EA_GCP_PROJECT_ID,
       },
     };
   }
@@ -107,7 +107,7 @@ async function checkOpenAI(): Promise<HealthCheck> {
     // Test OpenAI API connectivity with a simple request
     const response = await fetch("https://api.openai.com/v1/models", {
       headers: {
-        Authorization: `Bearer ${config.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
       },
     });
 
@@ -151,7 +151,7 @@ async function checkWhisper(): Promise<HealthCheck> {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${config.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
         },
       },
     );
@@ -165,7 +165,7 @@ async function checkWhisper(): Promise<HealthCheck> {
         status: "healthy",
         responseTime,
         details: {
-          model: config.EA_TRANSCRIPTION_MODEL,
+          model: env.EA_TRANSCRIPTION_MODEL,
           apiKey: "configured",
         },
       };
@@ -190,11 +190,11 @@ async function checkWhisper(): Promise<HealthCheck> {
 async function checkExternalServices(): Promise<HealthCheck[]> {
   const checks: HealthCheck[] = [];
   // Check Google Maps if enabled
-  if (config.EA_GOOGLE_MAPS_API_KEY) {
+  if (env.EA_GOOGLE_MAPS_API_KEY) {
     const startTime = Date.now();
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=test&key=${config.EA_GOOGLE_MAPS_API_KEY}`,
+        `https://maps.googleapis.com/maps/api/geocode/json?address=test&key=${env.EA_GOOGLE_MAPS_API_KEY}`,
       );
 
       checks.push({
@@ -219,6 +219,9 @@ async function checkExternalServices(): Promise<HealthCheck[]> {
 // Main health check handler
 export async function GET(_request: NextRequest) {
   try {
+    // Validate environment variables at runtime
+    validateEnv();
+
     // Run all health checks in parallel
     const [
       databaseCheck,
@@ -261,7 +264,7 @@ export async function GET(_request: NextRequest) {
       status: overallStatus,
       timestamp: new Date().toISOString(),
       version: process.env.npm_package_version || "1.0.0",
-      environment: config.NODE_ENV,
+      environment: env.NODE_ENV,
       checks: allChecks,
       uptime: process.uptime(),
     };
@@ -282,7 +285,7 @@ export async function GET(_request: NextRequest) {
       status: "unhealthy",
       timestamp: new Date().toISOString(),
       version: process.env.npm_package_version || "1.0.0",
-      environment: config.NODE_ENV,
+      environment: env.NODE_ENV,
       checks: [],
       uptime: process.uptime(),
     };

@@ -6,7 +6,7 @@ import "server-only";
 import { openai } from "@ai-sdk/openai";
 import { embed } from "ai";
 import { vectorStore } from "@/lib/gcp/db";
-import { config } from "@/lib/config";
+import { env, validateEnv } from "@/lib/env";
 import logger from "@/lib/logger";
 
 // Types for vector operations
@@ -59,7 +59,7 @@ export class VectorStoreService {
       );
 
       const { embedding } = await embed({
-        model: openai.embedding(config.EA_EMBEDDING_MODEL),
+        model: openai.embedding(env.EA_EMBEDDING_MODEL),
         value: request.text,
       });
 
