@@ -98,6 +98,10 @@ export const pgUserRepository: UserRepository = {
   },
 
   getUserCount: async () => {
+    if (!db) {
+      console.warn("Database not available - returning 0 user count");
+      return 0;
+    }
     const [result] = await db.select({ count: count() }).from(UserTable);
     return result?.count ?? 0;
   },

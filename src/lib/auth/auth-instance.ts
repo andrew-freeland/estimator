@@ -139,6 +139,15 @@ export const getSession = async () => {
 let isFirstUserCache: boolean | null = null;
 
 export const getIsFirstUser = async () => {
+  // Build-time safety check - skip DB queries if no database URL is available
+  const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+  if (!dbUrl) {
+    logger.warn(
+      "No database URL available during build - defaulting to not first user",
+    );
+    return false;
+  }
+
   // If we already know there's at least one user, return false immediately
   // This in-memory cache prevents any DB calls once we know users exist
   if (isFirstUserCache === false) {
