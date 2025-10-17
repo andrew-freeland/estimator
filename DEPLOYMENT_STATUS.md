@@ -147,6 +147,34 @@ import EstimatorChat from "@/components/estimator-chat";
 - `src/agents/` - Agent system files
 - `src/vectorstore/` - Document processing
 
+## 🧠 TypeScript Inference Pitfalls
+
+### EmbeddingResult[] Build Error
+When initializing an empty array in strict TypeScript mode, always annotate its type if you plan to populate it later. Otherwise, it defaults to `never[]`, which causes incompatible type errors like:
+
+```
+Type error: Argument of type 'EmbeddingResult' is not assignable to parameter of type 'never'.
+```
+
+**✅ Fix this by typing the array explicitly:**
+```typescript
+// ❌ Wrong - TypeScript infers as never[]
+const results = [];
+
+// ✅ Correct - Explicitly typed
+const results: EmbeddingResult[] = [];
+```
+
+**Common scenarios where this occurs:**
+- Batch processing functions that accumulate results
+- Array initialization before async operations
+- Generic functions that return arrays
+
+**Prevention:**
+- Always type array variables when you know the expected element type
+- Use `as const` for readonly arrays when appropriate
+- Consider using `Array<T>()` constructor for explicit typing
+
 ## 📝 Notes for Future Developers
 
 - The current implementation prioritizes deployment over functionality
@@ -154,6 +182,7 @@ import EstimatorChat from "@/components/estimator-chat";
 - The LLM can still provide helpful construction advice without the agent system
 - Database setup is the main blocker for full functionality
 - Consider implementing a "demo mode" with sample data for testing
+- **TypeScript strict mode requires explicit typing for array operations**
 
 ---
 

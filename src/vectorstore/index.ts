@@ -162,7 +162,8 @@ export class VectorStoreService {
       metadata?: Record<string, any>;
     }>,
   ) {
-    const results = [];
+    // Research-backed fix: TypeScript inference pitfall - explicitly type array to avoid never[] inference
+    const results: EmbeddingResult[] = [];
 
     // Process in batches to avoid overwhelming the API
     const batchSize = 10; // Stack compliance update: Use fixed batch size
