@@ -75,37 +75,56 @@ const result = await streamText({
 return result.toTextStreamResponse();
 ```
 
-## Additional Guidelines
+## Canonical Vercel Rules & Patterns (AI SDK v5)
 
-### 11. ✅ UI Message Stream vs Text Stream
+### A. Model Objects (not plain `{ provider, modelId }`)
 
-- Use `createUIMessageStream` + `createUIMessageStreamResponse` for complex chat interfaces with tool calls
-- Use `streamText` + `.toTextStreamResponse()` for simple text responses
-- Use `streamObject` + `.toTextStreamResponse()` for structured data streaming
+- `streamText`/`streamObject` must receive a **LanguageModel** instance (e.g., `openai('gpt-4o')`), not a custom POJO
+- The `model` param type is explicitly `LanguageModel`
+- Using official provider helpers (e.g., `@ai-sdk/openai`) guarantees compatible `LanguageModel` objects
+- Keep model selection centralized in `customModelProvider` (must return valid `LanguageModel` objects)
 
-### 12. ✅ Error Handling Patterns
+### B. Streaming Helpers (what to return from route handlers)
+
+- **Complex chat/tools** → `result.toUIMessageStreamResponse()` from `streamText`
+- **Simple text** (no tools/extra metadata) → `result.toTextStreamResponse()`
+- **UI streams** → Use `createUIMessageStream` + `createUIMessageStreamResponse` for advanced chat interfaces
+- **Structured data** → `streamObject` + `.toTextStreamResponse()` for object streaming
+
+### C. Error Handling (official guidance)
 
 ```ts
 try {
   const result = await streamText({ model, messages });
-  return result.toTextStreamResponse();
+  return result.toTextStreamResponse(); // or toUIMessageStreamResponse()
 } catch (error) {
   logger.error("AI SDK error:", error);
   return new Response("Internal server error", { status: 500 });
 }
 ```
 
-### 13. ✅ Model Configuration Consistency
+### D. Tool Integration Patterns
 
-- Always use `aiConfig.explainerModel` for construction estimation tasks
-- Use `aiConfig.openaiApiKey` through the model provider, not directly
-- Keep model selection logic centralized in `customModelProvider`
-
-### 14. ✅ Tool Integration Patterns
-
+- AI SDK tool calling is native to `streamText`/`generateText`
+- Pass tools via the `tools` option to `streamText` so the SDK can orchestrate calls
 - For MCP tools: Use `mcpClientsManager.tools()` and `mcpClientsManager.toolCall()`
 - For workflow tools: Use `loadWorkFlowTools()` with proper context
 - For app default tools: Use `loadAppDefaultTools()` with mentions
+
+### Canonical Sources (for the Cursor agent)
+
+- **streamText reference:** https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-text
+- **streamObject reference:** https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-object
+- **Generating & Streaming Text (helpers):** https://ai-sdk.dev/docs/ai-sdk-core/generating-text
+- **Providers & Models (LanguageModel contract):** https://ai-sdk.dev/docs/foundations/providers-and-models
+- **OpenAI provider helper:** https://ai-sdk.dev/providers/ai-sdk-providers/openai
+- **Next.js cookbook (returning UI streams from routes):** https://ai-sdk.dev/cookbook/next/stream-text
+- **UI stream utilities:** 
+  - createUIMessageStream → https://ai-sdk.dev/docs/reference/ai-sdk-ui/create-ui-message-stream
+  - createUIMessageStreamResponse → https://ai-sdk.dev/docs/reference/ai-sdk-ui/create-ui-message-stream-response
+- **Stream protocols (text vs data):** https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol
+- **Error handling (streams):** https://ai-sdk.dev/docs/ai-sdk-core/error-handling
+- **Vercel streaming guide:** https://vercel.com/guides/streaming-from-llm
 
 ## Guardrails
 
