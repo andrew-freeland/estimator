@@ -25,7 +25,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "ui/dropdown-menu";
-import { BabyResearch, GetWeather } from "lib/ai/workflow/examples";
+import { GetWeather } from "lib/ai/workflow/examples";
+// Stack compliance update: BabyResearch moved out of build path to reduce bundle size
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "ui/dialog";
@@ -188,9 +189,10 @@ export default function WorkflowListPage({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-54">
-              <DropdownMenuItem onClick={() => createExample(BabyResearch())}>
+              {/* Stack compliance update: BabyResearch moved out of build path to reduce bundle size */}
+              {/* <DropdownMenuItem onClick={() => createExample(BabyResearch())}>
                 👨🏻‍🔬 {t("Workflow.example.babyResearch")}
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuItem onClick={() => createExample(GetWeather())}>
                 🌤️ {t("Workflow.example.getWeather")}
               </DropdownMenuItem>
