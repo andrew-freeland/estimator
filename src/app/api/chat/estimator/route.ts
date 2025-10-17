@@ -20,6 +20,7 @@ import { streamText } from "ai";
 // import { explainerAgent } from "@/agents/explainer_agent";
 // import { vectorStoreService } from "@/vectorstore";
 import logger from "@/lib/logger";
+import { aiConfig } from "@/lib/config";
 
 export async function POST(request: Request) {
   try {
@@ -41,8 +42,8 @@ export async function POST(request: Request) {
     return streamText({
       model: {
         provider: "openai",
-        modelId: "gpt-4o-mini",
-        apiKey: process.env.OPENAI_API_KEY,
+        modelId: aiConfig.explainerModel, // Uses "gpt-4o" from config
+        apiKey: aiConfig.openaiApiKey,
       },
       messages: [
         {

@@ -3,6 +3,7 @@
 // Just connects to OpenAI without complex agents
 
 import { streamText } from "ai";
+import { aiConfig } from "@/lib/config";
 
 export async function POST(request: Request) {
   try {
@@ -21,8 +22,8 @@ export async function POST(request: Request) {
     return streamText({
       model: {
         provider: "openai",
-        modelId: "gpt-4o-mini",
-        apiKey: process.env.OPENAI_API_KEY,
+        modelId: aiConfig.explainerModel, // Uses "gpt-4o" from config
+        apiKey: aiConfig.openaiApiKey,
       },
       messages: [
         {
