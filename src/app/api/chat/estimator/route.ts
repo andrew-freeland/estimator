@@ -36,10 +36,6 @@ export async function POST(request: Request) {
 
     logger.info(`Processing estimator chat request for thread ${threadId}`);
 
-    // Extract client and job context from thread or message metadata
-    const clientId = lastMessage.metadata?.clientId || "default";
-    const jobId = lastMessage.metadata?.jobId;
-
     // SIMPLIFIED: Direct LLM response without agent processing
     // TODO: Replace with processEstimatorMessage() after restoring agent system
     return streamText({
