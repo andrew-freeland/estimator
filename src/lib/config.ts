@@ -24,7 +24,7 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   EA_EMBEDDING_MODEL: z.string().default("text-embedding-3-large"),
   EA_TRANSCRIPTION_MODEL: z.string().default("whisper-1"),
-  EA_EXPLAINER_MODEL: z.string().default("gpt-4o"),
+  EA_EXPLAINER_MODEL: z.string().default("gpt-5"),
   
   // Google Workspace integration
   EA_GOOGLE_CLIENT_ID: z.string().optional(),
