@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth/server";
 import { BasicUser, UserZodSchema } from "app-types/user";
-import { userRepository } from "lib/db/repository";
+import { userRepository, contractorProfileRepository } from "lib/db/repository";
 import { ActionState } from "lib/action-utils";
 import { headers } from "next/headers";
 
@@ -19,8 +19,31 @@ export async function signUpAction(data: {
   email: string;
   name: string;
   password: string;
+  contractorProfile?: {
+    companyName?: string;
+    companySize?: string;
+    primaryLocation?: string;
+    serviceAreas?: string[];
+    primaryTrade?: string;
+    specialties?: string[];
+    projectTypes?: string[];
+    yearsInBusiness?: number;
+    licenseNumber?: string;
+    interests?: string[];
+    goals?: string;
+    website?: string;
+    phone?: string;
+    additionalInfo?: string;
+    pricingNotes?: string;
+    laborPricingFile?: string;
+    materialPricingFile?: string;
+  };
 }): Promise<SignUpActionResponse> {
-  const { success, data: parsedData } = UserZodSchema.safeParse(data);
+  const { success, data: parsedData } = UserZodSchema.safeParse({
+    email: data.email,
+    name: data.name,
+    password: data.password,
+  });
   if (!success) {
     return {
       success: false,
@@ -36,6 +59,15 @@ export async function signUpAction(data: {
       },
       headers: await headers(),
     });
+
+    // Create contractor profile if provided
+    if (data.contractorProfile && user?.id) {
+      await contractorProfileRepository.create({
+        userId: user.id,
+        ...data.contractorProfile,
+      });
+    }
+
     return {
       user,
       success: true,

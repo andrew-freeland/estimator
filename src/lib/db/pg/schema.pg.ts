@@ -115,6 +115,54 @@ export const UserTable = pgTable("user", {
   role: text("role").notNull().default("user"),
 });
 
+// Contractor profile table for construction professionals
+export const ContractorProfileTable = pgTable("contractor_profile", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => UserTable.id, { onDelete: "cascade" })
+    .unique(),
+
+  // Company Information
+  companyName: text("company_name"),
+  companySize: varchar("company_size", {
+    enum: ["solo", "small", "medium", "large", "enterprise"],
+  }),
+
+  // Location and Service Area
+  primaryLocation: text("primary_location"), // City, State
+  serviceAreas: json("service_areas").$type<string[]>().default([]),
+
+  // Trade and Specialization
+  primaryTrade: text("primary_trade"), // e.g., "Electrical", "Plumbing", "General Contractor"
+  specialties: json("specialties").$type<string[]>().default([]),
+  projectTypes: json("project_types").$type<string[]>().default([]), // e.g., ["Residential", "Commercial", "Industrial"]
+
+  // Business Information
+  yearsInBusiness: integer("years_in_business"),
+  licenseNumber: text("license_number"),
+  insuranceInfo: json("insurance_info").default({}),
+
+  // Pricing and Capabilities
+  laborPricingFile: text("labor_pricing_file"), // File path/URL to uploaded pricing document
+  materialPricingFile: text("material_pricing_file"), // File path/URL to uploaded pricing document
+  pricingNotes: text("pricing_notes"),
+
+  // Interests and Goals
+  interests: json("interests").$type<string[]>().default([]),
+  goals: text("goals"),
+
+  // Additional Information
+  website: text("website"),
+  phone: text("phone"),
+  additionalInfo: text("additional_info"),
+
+  // Metadata
+  isComplete: boolean("is_complete").default(false).notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 // Role tables removed - using Better Auth's built-in role system
 // Roles are now managed via the 'role' field on UserTable
 
@@ -331,6 +379,8 @@ export type ChatMessageEntity = typeof ChatMessageTable.$inferSelect;
 export type AgentEntity = typeof AgentTable.$inferSelect;
 export type UserEntity = typeof UserTable.$inferSelect;
 export type SessionEntity = typeof SessionTable.$inferSelect;
+export type ContractorProfileEntity =
+  typeof ContractorProfileTable.$inferSelect;
 
 export type ToolCustomizationEntity =
   typeof McpToolCustomizationTable.$inferSelect;
