@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -16,15 +15,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/users", request.url));
   }
 
-  // Research-backed fix: Better-auth Edge runtime compatibility
-  // Use getSessionCookie for session detection, with fallback for Edge runtime
-  let sessionCookie;
-  try {
-    sessionCookie = getSessionCookie(request);
-  } catch (_error) {
-    // Fallback: check for session cookie presence manually if getSessionCookie fails on Edge
-    sessionCookie = request.cookies.get("ba-session")?.value;
-  }
+  // Edge runtime compatible session check
+  // Directly check for better-auth session cookie without importing better-auth
+  const sessionCookie = request.cookies.get("ba-session")?.value;
 
   if (!sessionCookie) {
     return NextResponse.redirect(new URL("/sign-in", request.url));

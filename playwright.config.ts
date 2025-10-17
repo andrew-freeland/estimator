@@ -59,5 +59,10 @@ export default defineConfig({
     timeout: 180 * 1000, // 3 minutes for build and start
     stdout: "pipe",
     stderr: "pipe",
+    env: {
+      ...process.env,
+      // Ensure test environment variables are available
+      NODE_ENV: "test",
+    },
   },
 });
