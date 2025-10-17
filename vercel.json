@@ -1,15 +1,9 @@
 {
   "git": {
     "deploymentEnabled": {
-      "main": true,
-      "release-please--branches--main--components--better-chatbot": false
+      "main": true
     }
   },
   "buildCommand": "pnpm run build",
-  "outputDirectory": ".next",
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  }
+  "outputDirectory": ".next"
 }
