@@ -27,7 +27,11 @@ import { ChevronLeft, Loader, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { safe } from "ts-safe";
 import { UserZodSchema } from "app-types/user";
-import { existsByEmailAction, signUpAction } from "@/app/api/auth/actions";
+import {
+  existsByEmailAction,
+  signUpAction,
+  signInAction,
+} from "@/app/api/auth/actions";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -185,7 +189,18 @@ export default function EmailSignUp({
     ).unwrap();
     if (success) {
       toast.success(message);
-      router.push("/");
+      // Automatically sign in the user after successful registration
+      try {
+        await signInAction({
+          email: formData.email,
+          password: formData.password,
+        });
+        // Redirect to chat after successful sign-in
+        router.push("/");
+      } catch {
+        // If auto sign-in fails, still redirect to home (user can sign in manually)
+        router.push("/");
+      }
     } else {
       toast.error(message);
     }

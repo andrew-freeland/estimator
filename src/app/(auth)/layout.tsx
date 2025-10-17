@@ -15,14 +15,9 @@ export default async function AuthLayout({
             <div className="absolute inset-0 w-full h-full">
               <BackgroundPaths />
             </div>
-            <h1 className="text-xl font-semibold flex flex-col items-start gap-1 animate-in fade-in duration-1000">
-              <div className="flex items-center gap-3">
-                <Think />
-                <span>Construction Cost</span>
-              </div>
-              <span className="text-lg text-muted-foreground ml-8">
-                Co-Pilot
-              </span>
+            <h1 className="text-xl font-semibold flex items-center gap-3 animate-in fade-in duration-1000">
+              <Think />
+              <span>Construction Cost Co-Pilot</span>
             </h1>
             <div className="flex-1" />
             <FlipWords
