@@ -112,11 +112,11 @@ const options = {
     },
   },
   socialProviders: socialAuthenticationProviders,
-  pages: {
-    signIn: "/sign-in",
-    signUp: "/sign-up",
-    home: "/estimator",
-  },
+  // pages: {
+  //   signIn: "/sign-in",
+  //   signUp: "/sign-up",
+  //   home: "/chat",
+  // },
 } satisfies BetterAuthOptions;
 
 export const auth = betterAuth({

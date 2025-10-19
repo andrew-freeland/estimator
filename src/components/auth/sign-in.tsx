@@ -51,16 +51,35 @@ export default function SignIn({
         {
           email: formData.email,
           password: formData.password,
-          callbackURL: "/estimator",
+          callbackURL: "/chat",
         },
         {
           onError(ctx) {
             console.error("Sign-in error:", ctx.error);
-            const errorMessage =
-              ctx.error?.message ||
-              ctx.error?.statusText ||
-              ctx.error?.toString() ||
-              "Invalid email or password";
+            let errorMessage = "Invalid email or password";
+
+            if (ctx.error?.message) {
+              const message = ctx.error.message.toLowerCase();
+              if (
+                message.includes("invalid email") ||
+                message.includes("email")
+              ) {
+                errorMessage = "Invalid email format";
+              } else if (
+                message.includes("password") ||
+                message.includes("incorrect")
+              ) {
+                errorMessage = "Incorrect password";
+              } else if (
+                message.includes("not found") ||
+                message.includes("no user")
+              ) {
+                errorMessage = "No account found with this email";
+              } else {
+                errorMessage = ctx.error.message;
+              }
+            }
+
             toast.error(errorMessage);
           },
         },
