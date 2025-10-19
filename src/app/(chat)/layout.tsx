@@ -19,24 +19,24 @@ export default async function ChatLayout({
 }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const session = await getSession();
-  if (!session) {
-    redirect("/sign-in");
-  }
   const isCollapsed =
     cookieStore.get(COOKIE_KEY_SIDEBAR_STATE)?.value !== "true";
+
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
-      <SWRConfigProvider user={session.user}>
+      <SWRConfigProvider user={session?.user}>
         <AppPopupProvider
           userSettingsComponent={
-            <Suspense fallback={<UserDetailContentSkeleton />}>
-              <UserDetailContent view="user" />
-            </Suspense>
+            session ? (
+              <Suspense fallback={<UserDetailContentSkeleton />}>
+                <UserDetailContent view="user" />
+              </Suspense>
+            ) : null
           }
         />
-        <AppSidebar user={session.user} />
-        <main className="relative bg-background  w-full flex flex-col h-screen">
-          <AppHeader />
+        {session && <AppSidebar user={session.user} />}
+        <main className="relative bg-background w-full flex flex-col h-screen">
+          <AppHeader session={session} />
           <div className="flex-1 overflow-y-auto">{children}</div>
         </main>
       </SWRConfigProvider>

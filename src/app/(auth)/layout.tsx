@@ -1,6 +1,5 @@
 import { Think } from "ui/think";
 import { getTranslations } from "next-intl/server";
-import { FlipWords } from "ui/flip-words";
 import { BackgroundPaths } from "ui/background-paths";
 
 export default async function AuthLayout({
@@ -15,15 +14,12 @@ export default async function AuthLayout({
             <div className="absolute inset-0 w-full h-full">
               <BackgroundPaths />
             </div>
-            <h1 className="text-xl font-semibold flex items-center gap-3 animate-in fade-in duration-1000">
+            <h1 className="text-xl font-semibold flex items-center gap-3">
               <Think />
-              <span>Construction Cost Co-Pilot</span>
+              <span>Estimator Assistant</span>
             </h1>
             <div className="flex-1" />
-            <FlipWords
-              words={[t("description")]}
-              className=" mb-4 text-muted-foreground"
-            />
+            <p className="mb-4 text-muted-foreground">{t("description")}</p>
           </div>
 
           <div className="w-full lg:w-1/2 p-6">{children}</div>

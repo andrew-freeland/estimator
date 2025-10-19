@@ -13,10 +13,18 @@ const config: Config = {
       colors: {
         background: "var(--color-background)",
         foreground: "var(--color-foreground)",
+        brand: {
+          charcoal: "#1D1E22",
+          cream: "#F8F6F2",
+          orange: "#F28C28",
+          blue: "#2A6FE4",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
         mono: ["var(--font-mono)"],
+        heading: ["Chakra Petch", "sans-serif"],
+        body: ["Space Grotesk", "sans-serif"],
       },
     },
   },

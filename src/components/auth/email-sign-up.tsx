@@ -259,7 +259,7 @@ export default function EmailSignUp({
               <Input
                 id="name"
                 type="text"
-                placeholder="Cgoing"
+                placeholder="John Doe"
                 disabled={isLoading}
                 autoFocus
                 value={formData.name}

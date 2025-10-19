@@ -39,11 +39,13 @@ export async function middleware(request: NextRequest) {
 
   console.log("Middleware: Has session:", hasSession);
 
-  // Temporarily allow access to estimator for testing
-  if (pathname === "/estimator") {
+  // Allow access to main pages without authentication
+  const publicPaths = ["/", "/estimator", "/chat"];
+  if (publicPaths.includes(pathname)) {
     return NextResponse.next();
   }
 
+  // Only require authentication for protected routes
   if (!hasSession) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }

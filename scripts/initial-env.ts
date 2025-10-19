@@ -9,9 +9,9 @@ const DOCKER_ENV_PATH = path.join(ROOT, "docker");
 // PostgreSQL settings for Docker environment
 const DOCKER_POSTGRES_SETTINGS = [
   "# == DOCKER POSTGRES SETTINGS ==",
-  "POSTGRES_URL=postgres://your_username:your_password@postgres:5432/better_chatbot",
+  "POSTGRES_URL=postgres://postgres:your_password@postgres:5432/better_chatbot",
   "POSTGRES_DB=better_chatbot",
-  "POSTGRES_USER=your_username",
+  "POSTGRES_USER=postgres",
   "POSTGRES_PASSWORD=your_password",
 ].join("\n");
 

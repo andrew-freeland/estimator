@@ -7,9 +7,11 @@ import {
   ChevronDown,
   MessageCircleDashed,
   PanelLeft,
+  LogIn,
 } from "lucide-react";
 import { Button } from "ui/button";
 import { Separator } from "ui/separator";
+import Link from "next/link";
 
 import { useEffect, useMemo } from "react";
 import { ThreadDropdown } from "../thread-dropdown";
@@ -22,7 +24,11 @@ import { TextShimmer } from "ui/text-shimmer";
 import { buildReturnUrl } from "lib/admin/navigation-utils";
 import { BackButton } from "@/components/layouts/back-button";
 
-export function AppHeader() {
+interface AppHeaderProps {
+  session?: any;
+}
+
+export function AppHeader({ session }: AppHeaderProps) {
   const t = useTranslations();
   const [appStoreMutate] = appStore(useShallow((state) => [state.mutate]));
   const { toggleSidebar, open } = useSidebar();
@@ -94,7 +100,24 @@ export function AppHeader() {
 
       {componentByPage}
       <div className="flex-1" />
-      {showActionButtons && (
+
+      {/* Sign-in button for non-authenticated users */}
+      {!session && (
+        <div className="flex items-center gap-2">
+          <Link href="/sign-in">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white"
+            >
+              <LogIn className="size-4" />
+              Sign In
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {showActionButtons && session && (
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>

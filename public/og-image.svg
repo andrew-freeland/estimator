@@ -1,0 +1,55 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none"
+    xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="1200" height="630" fill="#F8F6F2"/>
+
+    <!-- Header background -->
+    <rect x="0" y="0" width="1200" height="200" fill="#1D1E22"/>
+
+    <!-- Logo area -->
+    <circle cx="100" cy="100" r="40" fill="#F28C28"/>
+    <path d="M80 80c0-2.2 1.8-4 4-4h8c2.2 0 4 1.8 4 4v8c0 2.2-1.8 4-4 4h-8c-2.2 0-4-1.8-4-4v-8z" fill="white"/>
+    <path d="M84 76h8c1.1 0 2 .9 2 2v6c0 1.1-.9 2-2 2h-8c-1.1 0-2-.9-2-2v-6c0-1.1.9-2 2-2z" fill="#1D1E22"/>
+
+    <!-- Monitor icon -->
+    <rect x="180" y="70" width="60" height="40" rx="4" fill="white"/>
+    <rect x="184" y="74" width="52" height="32" rx="2" fill="#2A6FE4"/>
+    <rect x="200" y="120" width="20" height="6" rx="2" fill="white"/>
+
+    <!-- Title -->
+    <text x="300" y="120" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white">Estimator Assistant</text>
+    <text x="300" y="160" font-family="Arial, sans-serif" font-size="24" fill="#F28C28">AI estimating companion for builders</text>
+
+    <!-- Main content area -->
+    <rect x="100" y="250" width="1000" height="300" rx="12" fill="white" stroke="#1D1E22" stroke-width="2"/>
+
+    <!-- Feature icons -->
+    <circle cx="200" cy="350" r="30" fill="#F28C28"/>
+    <text x="200" y="360" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">AI</text>
+
+    <circle cx="400" cy="350" r="30" fill="#2A6FE4"/>
+    <text x="400" y="360" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">📊</text>
+
+    <circle cx="600" cy="350" r="30" fill="#F28C28"/>
+    <text x="600" y="360" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">🏗️</text>
+
+    <circle cx="800" cy="350" r="30" fill="#2A6FE4"/>
+    <text x="800" y="360" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">💰</text>
+
+    <!-- Feature text -->
+    <text x="200" y="400" font-family="Arial, sans-serif" font-size="16" fill="#1D1E22" text-anchor="middle">AI-Powered</text>
+    <text x="200" y="420" font-family="Arial, sans-serif" font-size="14" fill="#666" text-anchor="middle">Cost Estimation</text>
+
+    <text x="400" y="400" font-family="Arial, sans-serif" font-size="16" fill="#1D1E22" text-anchor="middle">Excel Reports</text>
+    <text x="400" y="420" font-family="Arial, sans-serif" font-size="14" fill="#666" text-anchor="middle">Automated Output</text>
+
+    <text x="600" y="400" font-family="Arial, sans-serif" font-size="16" fill="#1D1E22" text-anchor="middle">Construction</text>
+    <text x="600" y="420" font-family="Arial, sans-serif" font-size="14" fill="#666" text-anchor="middle">Project Focus</text>
+
+    <text x="800" y="400" font-family="Arial, sans-serif" font-size="16" fill="#1D1E22" text-anchor="middle">Pricing</text>
+    <text x="800" y="420" font-family="Arial, sans-serif" font-size="14" fill="#666" text-anchor="middle">Market Rates</text>
+
+    <!-- Footer -->
+    <text x="600" y="580" font-family="Arial, sans-serif" font-size="20" fill="#1D1E22" text-anchor="middle">Powered by MyBuilderBot</text>
+    <text x="600" y="610" font-family="Arial, sans-serif" font-size="14" fill="#F28C28" text-anchor="middle">mybuilderbot.com</text>
+</svg>
