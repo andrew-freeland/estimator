@@ -18,9 +18,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Estimator",
+  title: "Estimator Assistant | MyBuilderBot",
   description:
-    "Estimator is a chatbot that uses the Tools to answer questions.",
+    "AI estimating companion for builders — powered by MyBuilderBot.",
+  keywords: [
+    "construction",
+    "estimating",
+    "AI",
+    "contractor",
+    "builder",
+    "cost estimation",
+  ],
+  authors: [{ name: "Builder's Business Partner LLC" }],
+  openGraph: {
+    title: "Estimator Assistant | MyBuilderBot",
+    description:
+      "AI estimating companion for builders — powered by MyBuilderBot.",
+    type: "website",
+    url: "https://mybuilderbot.com",
+    siteName: "MyBuilderBot",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Estimator Assistant | MyBuilderBot",
+    description:
+      "AI estimating companion for builders — powered by MyBuilderBot.",
+  },
 };
 
 export default async function RootLayout({

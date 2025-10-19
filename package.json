@@ -1,9 +1,12 @@
 {
-  "name": "estimator",
+  "name": "estimator-assistant",
   "version": "1.24.0",
   "private": true,
-  "author": "andrew-freeland",
+  "author": "Andrew Cunningham, Builder's Business Partner LLC",
   "license": "MIT",
+  "description": "AI estimating assistant for contractors — by Builder's Business Partner (MyBuilderBot)",
+  "homepage": "https://mybuilderbot.com",
+  "repository": "https://github.com/andrew-freeland/estimator",
   "type": "module",
   "scripts": {
     "dev": "next dev",

@@ -761,6 +761,42 @@
     --sidebar-border: hsl(340 60% 85%);
     --sidebar-ring: hsl(340 80% 65%);
   }
+
+  [data-theme="mybuilderbot"] {
+    --background: hsl(30 20% 97%);
+    --foreground: hsl(30 20% 10%);
+    --card: hsl(30 20% 98%);
+    --card-foreground: hsl(30 20% 10%);
+    --popover: hsl(30 20% 98%);
+    --popover-foreground: hsl(30 20% 10%);
+    --primary: hsl(24 95% 53%);
+    --primary-foreground: hsl(30 20% 98%);
+    --secondary: hsl(200 20% 45%);
+    --secondary-foreground: hsl(200 20% 10%);
+    --muted: hsl(30 15% 90%);
+    --muted-foreground: hsl(30 15% 40%);
+    --accent: hsl(200 20% 45%);
+    --accent-foreground: hsl(200 20% 98%);
+    --destructive: hsl(0 80% 50%);
+    --destructive-foreground: hsl(0 80% 98%);
+    --border: hsl(30 20% 85%);
+    --input: hsl(30 20% 85%);
+    --ring: hsl(24 95% 53%);
+    --radius: 0.6rem;
+    --chart-1: hsl(24 95% 53%);
+    --chart-2: hsl(200 20% 45%);
+    --chart-3: hsl(30 20% 60%);
+    --chart-4: hsl(120 20% 50%);
+    --chart-5: hsl(280 20% 55%);
+    --sidebar: hsl(30 20% 95%);
+    --sidebar-foreground: hsl(30 20% 10%);
+    --sidebar-primary: hsl(24 95% 53%);
+    --sidebar-primary-foreground: hsl(30 20% 98%);
+    --sidebar-accent: hsl(200 20% 45%);
+    --sidebar-accent-foreground: hsl(200 20% 10%);
+    --sidebar-border: hsl(30 20% 90%);
+    --sidebar-ring: hsl(24 95% 53%);
+  }
 }
 
 .dark {

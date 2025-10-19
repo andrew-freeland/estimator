@@ -1,6 +1,10 @@
-# 🏗️ Estimator Assistant MCP
+# 🏗️ Estimator Assistant
 
-A modular, secure, cloud-deployable **Estimator Assistant MCP** for construction estimating — capable of ingesting files, transcribing voice notes, referencing Google Workspace data, and explaining project estimates with confidence and reasoning.
+**AI estimating companion for builders — powered by MyBuilderBot**
+
+A modular, secure, cloud-deployable **Estimator Assistant** for construction estimating — capable of ingesting files, transcribing voice notes, referencing Google Workspace data, and explaining project estimates with confidence and reasoning.
+
+*Built by Builder's Business Partner LLC*
 
 ## 🚀 Features
 
@@ -214,19 +218,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Built on top of [better-chatbot](https://github.com/cgoinglove/better-chatbot)
+- Built on top of [better-chatbot](https://github.com/cgoinglove/better-chatbot) (MIT License)
 - UI components from [assistant-ui](https://github.com/assistant-ui/assistant-ui)
 - AI capabilities powered by OpenAI and Google Cloud Platform
 - Construction industry insights from Google Workspace
 
 ## 📞 Support
 
-For support, email support@estimator-assistant.com or join our Discord community.
+For support, email support@mybuilderbot.com or visit [mybuilderbot.com](https://mybuilderbot.com).
 
 ---
 
-**Built with ❤️ for the construction industry**# Vercel deployment test
-# Deployment trigger - Thu Oct 16 14:57:18 PDT 2025
-# Final deployment with environment variables configured - Thu Oct 16 15:13:09 PDT 2025
-# Testing deployment with corrected Vercel configuration - Thu Oct 16 15:20:19 PDT 2025
-# Force redeploy Fri Oct 17 11:48:08 PDT 2025
+### Legal Notice
+Estimator Assistant includes modified portions of open-source software licensed under the MIT License.  
+Original work © 2024 respective authors.  
+Enhancements and integrations © 2025 Builder's Business Partner LLC.
+
+**Built with ❤️ for the construction industry**
