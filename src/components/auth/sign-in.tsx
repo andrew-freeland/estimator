@@ -55,7 +55,13 @@ export default function SignIn({
         },
         {
           onError(ctx) {
-            toast.error(ctx.error.message || ctx.error.statusText);
+            console.error("Sign-in error:", ctx.error);
+            const errorMessage =
+              ctx.error?.message ||
+              ctx.error?.statusText ||
+              ctx.error?.toString() ||
+              "Invalid email or password";
+            toast.error(errorMessage);
           },
         },
       ),

@@ -23,8 +23,10 @@ export async function middleware(request: NextRequest) {
     request.cookies.getAll().map((c) => c.name),
   );
 
-  // Check for any better-auth session cookies
+  // Check for better-auth session cookies
   const sessionCookies = [
+    "better-auth.session_token",
+    "better-auth.session_data",
     "ba-session",
     "better-auth.session",
     "better-auth-session",
