@@ -51,7 +51,7 @@ export default function SignIn({
         {
           email: formData.email,
           password: formData.password,
-          callbackURL: "/",
+          callbackURL: "/estimator",
         },
         {
           onError(ctx) {

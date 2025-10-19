@@ -195,11 +195,11 @@ export default function EmailSignUp({
           email: formData.email,
           password: formData.password,
         });
-        // Redirect to chat after successful sign-in
-        router.push("/");
+        // Redirect to estimator chat after successful sign-in
+        router.push("/estimator");
       } catch {
-        // If auto sign-in fails, still redirect to home (user can sign in manually)
-        router.push("/");
+        // If auto sign-in fails, still redirect to estimator (user can sign in manually)
+        router.push("/estimator");
       }
     } else {
       toast.error(message);

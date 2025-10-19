@@ -80,3 +80,35 @@ export async function signUpAction(data: {
     };
   }
 }
+
+export async function signInAction(data: {
+  email: string;
+  password: string;
+}): Promise<ActionState> {
+  try {
+    const { user } = await auth.api.signInEmail({
+      body: {
+        email: data.email,
+        password: data.password,
+      },
+      headers: await headers(),
+    });
+
+    if (user) {
+      return {
+        success: true,
+        message: "Successfully signed in",
+      };
+    } else {
+      return {
+        success: false,
+        message: "Invalid credentials",
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to sign in",
+    };
+  }
+}

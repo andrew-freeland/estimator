@@ -4,7 +4,7 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
     ports:
-      - '3000:3000'
+      - "3000:3000"
     environment:
       - NO_HTTPS=1
     env_file:
@@ -19,7 +19,9 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: postgres:17
+    image: pgvector/pgvector:pg17
+    ports:
+      - "5432:5432"
     env_file:
       - .env
     networks:

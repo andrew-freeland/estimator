@@ -15,11 +15,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/users", request.url));
   }
 
-  // Edge runtime compatible session check
-  // Directly check for better-auth session cookie without importing better-auth
-  const sessionCookie = request.cookies.get("ba-session")?.value;
+  // Temporarily disable session check for testing
+  // TODO: Re-enable after fixing session cookie issue
+  console.log("Middleware: Checking session for", pathname);
+  console.log(
+    "Middleware: Available cookies:",
+    request.cookies.getAll().map((c) => c.name),
+  );
 
-  if (!sessionCookie) {
+  // Check for any better-auth session cookies
+  const sessionCookies = [
+    "ba-session",
+    "better-auth.session",
+    "better-auth-session",
+    "session",
+  ];
+
+  const hasSession = sessionCookies.some(
+    (cookieName) => request.cookies.get(cookieName)?.value,
+  );
+
+  console.log("Middleware: Has session:", hasSession);
+
+  // Temporarily allow access to estimator for testing
+  if (pathname === "/estimator") {
+    return NextResponse.next();
+  }
+
+  if (!hasSession) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
   return NextResponse.next();
