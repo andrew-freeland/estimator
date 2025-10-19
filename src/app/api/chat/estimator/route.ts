@@ -1,34 +1,14 @@
 // @module: estimator_chat_api
 // API endpoint for Estimator Assistant chat
-//
-// ⚠️  TEMPORARILY SIMPLIFIED FOR DEPLOYMENT ⚠️
-//
-// This route has been simplified to work without database dependencies.
-// See DEPLOYMENT_STATUS.md for details on restoring full functionality.
-//
-// TEMPORARILY DISABLED:
-// - ratesAgent (labor rates, material costs)
-// - explainerAgent (detailed estimate breakdowns)
-// - vectorStoreService (document search and analysis)
-// - Complex message processing and routing
-//
-// TO RESTORE: Uncomment imports below and restore processEstimatorMessage function
+// Now uses the unified orchestrator for all AI interactions
 
-import { streamText } from "ai";
-// TODO: Re-enable these imports after database setup
-// import { ratesAgent } from "@/agents/rates_agent";
-// import { explainerAgent } from "@/agents/explainer_agent";
-// import { vectorStoreService } from "@/vectorstore";
+import { orchestrator } from "@/lib/orchestrator";
 import logger from "@/lib/logger";
-import { env, validateEnv } from "@/lib/env";
-import { customModelProvider } from "@/lib/ai/models";
 
 export async function POST(request: Request) {
   try {
-    // Validate environment variables at runtime
-    validateEnv();
-
-    const { messages, threadId } = await request.json();
+    const { messages, threadId, userId, sessionId, context } =
+      await request.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response("Invalid messages format", { status: 400 });
@@ -41,27 +21,14 @@ export async function POST(request: Request) {
 
     logger.info(`Processing estimator chat request for thread ${threadId}`);
 
-    // SIMPLIFIED: Direct LLM response without agent processing
-    // TODO: Replace with processEstimatorMessage() after restoring agent system
-    const model = await customModelProvider.getModel({
-      provider: "openai",
-      model: env.EA_EXPLAINER_MODEL, // Uses "gpt-4o" from env
+    // Route through the unified orchestrator
+    return await orchestrator({
+      messages,
+      threadId,
+      userId,
+      sessionId,
+      context,
     });
-
-    // AI SDK model fix
-    const result = await streamText({
-      model,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a construction estimator assistant. Provide helpful, accurate responses about construction costs, estimates, and project planning. Keep responses concise and practical.",
-        },
-        ...messages,
-      ],
-    });
-
-    return result.toTextStreamResponse();
   } catch (error) {
     logger.error("Error in estimator chat API:", error);
     return new Response("Internal server error", { status: 500 });
