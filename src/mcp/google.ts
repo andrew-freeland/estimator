@@ -140,7 +140,10 @@ export const searchGoogleDriveTool = createTool({
         })
         .catch((error) => handleGoogleAPIError(error, "Drive files list"));
 
-      const files = (response?.data?.files as GoogleDriveFile[]) || [];
+      const files =
+        (response && "data" in response
+          ? (response.data?.files as GoogleDriveFile[])
+          : []) || [];
 
       return {
         success: true,
@@ -188,7 +191,10 @@ export const readGoogleSheetTool = createTool({
         })
         .catch((error) => handleGoogleAPIError(error, "Sheets values get"));
 
-      const data = response?.data as GoogleSheetData;
+      const data =
+        response && "data" in response
+          ? (response.data as GoogleSheetData)
+          : null;
       const values = data.values || [];
 
       const result: any = {
@@ -246,7 +252,10 @@ export const readGoogleDocTool = createTool({
         })
         .catch((error) => handleGoogleAPIError(error, "Docs document get"));
 
-      const doc = response?.data as GoogleDocContent;
+      const doc =
+        response && "data" in response
+          ? (response.data as GoogleDocContent)
+          : null;
 
       const result: any = {
         title: doc.title,

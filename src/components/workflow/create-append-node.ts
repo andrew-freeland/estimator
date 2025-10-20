@@ -59,7 +59,7 @@ export function createAppendNode({
   });
 
   if (kind === NodeKind.LLM) {
-    (node.data as LLMNodeData).model = appStore.getState().chatModel! ?? {};
+    (node.data as LLMNodeData).model = appStore.getState().chatModel!;
   }
   if (kind === NodeKind.Note) {
     return {
