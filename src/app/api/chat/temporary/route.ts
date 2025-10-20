@@ -1,4 +1,3 @@
-import { getSession } from "auth/server";
 import {
   UIMessage,
   convertToModelMessages,
@@ -7,8 +6,6 @@ import {
 } from "ai";
 import { customModelProvider } from "lib/ai/models";
 import globalLogger from "logger";
-import { buildUserSystemPrompt } from "lib/ai/prompts";
-import { getUserPreferences } from "lib/user/server";
 
 import { colorize } from "consola/utils";
 
@@ -19,8 +16,6 @@ const logger = globalLogger.withDefaults({
 export async function POST(request: Request) {
   try {
     const json = await request.json();
-
-    const session = await getSession();
 
     const { messages, chatModel, instructions } = json as {
       messages: UIMessage[];
@@ -37,13 +32,7 @@ export async function POST(request: Request) {
     let systemPrompt =
       "You are Estimator Assistant, an AI-powered estimating companion for builders. Help users with construction estimates, project scoping, and cost analysis.";
 
-    if (session?.user) {
-      const userPreferences =
-        (await getUserPreferences(session.user.id)) || undefined;
-      systemPrompt = `${buildUserSystemPrompt(session.user, userPreferences)} ${
-        instructions ? `\n\n${instructions}` : ""
-      }`.trim();
-    } else if (instructions) {
+    if (instructions) {
       systemPrompt = `${systemPrompt}\n\n${instructions}`;
     }
 
