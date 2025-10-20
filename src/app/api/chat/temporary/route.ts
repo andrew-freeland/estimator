@@ -21,9 +21,6 @@ export async function POST(request: Request) {
     const json = await request.json();
 
     const session = await getSession();
-    if (!session) {
-      return new Response("Unauthorized", { status: 401 });
-    }
 
     const { messages, chatModel, instructions } = json as {
       messages: UIMessage[];
@@ -35,14 +32,24 @@ export async function POST(request: Request) {
     };
     logger.info(`model: ${chatModel?.provider}/${chatModel?.model}`);
     const model = customModelProvider.getModel(chatModel);
-    const userPreferences =
-      (await getUserPreferences(session.user.id)) || undefined;
+
+    // For non-authenticated users, use a default system prompt
+    let systemPrompt =
+      "You are Estimator Assistant, an AI-powered estimating companion for builders. Help users with construction estimates, project scoping, and cost analysis.";
+
+    if (session?.user) {
+      const userPreferences =
+        (await getUserPreferences(session.user.id)) || undefined;
+      systemPrompt = `${buildUserSystemPrompt(session.user, userPreferences)} ${
+        instructions ? `\n\n${instructions}` : ""
+      }`.trim();
+    } else if (instructions) {
+      systemPrompt = `${systemPrompt}\n\n${instructions}`;
+    }
 
     return streamText({
       model,
-      system: `${buildUserSystemPrompt(session.user, userPreferences)} ${
-        instructions ? `\n\n${instructions}` : ""
-      }`.trim(),
+      system: systemPrompt,
       messages: convertToModelMessages(messages),
       experimental_transform: smoothStream({ chunking: "word" }),
       // AI SDK model fix

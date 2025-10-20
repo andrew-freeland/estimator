@@ -122,28 +122,24 @@ export default function SimplifiedChatBot({
     id: threadId,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     transport: new DefaultChatTransport({
+      api: "/api/chat/temporary",
       prepareSendMessagesRequest: ({ messages, body, id }) => {
         if (window.location.pathname !== `/chat/${threadId}`) {
           console.log("replace-state");
           window.history.replaceState({}, "", `/chat/${threadId}`);
         }
-        const lastMessage = messages.at(-1)!;
+        const _lastMessage = messages.at(-1)!;
 
-        const requestBody: ChatApiSchemaRequestBody = {
+        const requestBody = {
           ...body,
           id,
           chatModel: {
             provider: "openai",
             model: "gpt-4o",
           },
-          toolChoice: "auto",
-          allowedAppDefaultToolkit: [],
-          allowedMcpServers: {},
-          mentions: [],
-          message: lastMessage,
-          imageTool: {
-            model: undefined,
-          },
+          messages: messages,
+          instructions:
+            "You are Estimator Assistant, an AI-powered estimating companion for builders. Help users with construction estimates, project scoping, and cost analysis.",
         };
         return { body: requestBody };
       },
