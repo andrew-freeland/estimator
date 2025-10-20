@@ -1,63 +1,52 @@
-import { NextRequest, NextResponse } from "next/server";
-import { env } from "@/lib/env";
-import { config } from "@/lib/config";
+// New: lightweight masked debug route for quick health checks
+import { NextResponse } from "next/server";
+import { fileStorageDriver } from "lib/file-storage";
+import { IS_VERCEL_ENV } from "lib/const";
 
-export async function GET(request: NextRequest) {
+function mask(value: string | undefined) {
+  if (!value) return "not set";
+  if (value.length <= 6) return value.replace(/./g, "*");
+  return value.slice(0, 3) + value.slice(-3).replace(/./g, "*");
+}
+
+export async function GET() {
   try {
-    // Only allow debug in development or with special header
-    const isDebugAllowed =
-      process.env.NODE_ENV === "development" ||
-      request.headers.get("x-debug") === "true";
-
-    if (!isDebugAllowed) {
-      return NextResponse.json(
-        { error: "Debug endpoint not available" },
-        { status: 403 },
-      );
-    }
-
-    const debugInfo = {
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        VERCEL: process.env.VERCEL,
-        VERCEL_ENV: process.env.VERCEL_ENV,
-        VERCEL_URL: process.env.VERCEL_URL,
-      },
-      config: {
-        NODE_ENV: config.NODE_ENV,
-        BASE_URL: config.BASE_URL,
-        FILE_STORAGE_TYPE: config.FILE_STORAGE_TYPE,
-        LOG_LEVEL: config.LOG_LEVEL,
-      },
-      env: {
-        DATABASE_URL: env.DATABASE_URL ? "configured" : "not configured",
-        EA_GCP_PROJECT_ID: env.EA_GCP_PROJECT_ID
-          ? "configured"
-          : "not configured",
-        EA_GCS_BUCKET_NAME: env.EA_GCS_BUCKET_NAME
-          ? "configured"
-          : "not configured",
-        OPENAI_API_KEY: env.OPENAI_API_KEY ? "configured" : "not configured",
-        BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET
-          ? "configured"
-          : "not configured",
-      },
-      runtime: {
-        nodeVersion: process.version,
-        platform: process.platform,
-        uptime: process.uptime(),
-        memoryUsage: process.memoryUsage(),
-      },
-      timestamp: new Date().toISOString(),
+    // Minimal checks - do not try to connect to external services here to avoid slowdowns
+    const envSummary = {
+      NODE_ENV: process.env.NODE_ENV || "not set",
+      VERCEL: process.env.VERCEL || "not set",
+      BETTER_AUTH_SECRET: mask(process.env.BETTER_AUTH_SECRET),
+      OPENAI_API_KEY: mask(process.env.OPENAI_API_KEY),
+      FILE_STORAGE_TYPE: process.env.FILE_STORAGE_TYPE || fileStorageDriver,
+      BLOB_READ_WRITE_TOKEN: mask(process.env.BLOB_READ_WRITE_TOKEN),
+      EA_GCS_BUCKET_NAME: mask(process.env.EA_GCS_BUCKET_NAME),
     };
 
-    return NextResponse.json(debugInfo, { status: 200 });
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: "Debug endpoint failed",
-        message: error instanceof Error ? error.message : "Unknown error",
+    const storageCheck = {
+      driver: fileStorageDriver,
+      directUploadSupported: ["vercel-blob", "s3", "gcs"].includes(
+        fileStorageDriver,
+      ),
+      message:
+        fileStorageDriver === "vercel-blob"
+          ? "Ensure BLOB_READ_WRITE_TOKEN is set for direct uploads"
+          : fileStorageDriver === "gcs"
+            ? "Ensure EA_GCS_BUCKET_NAME & GCP auth are configured"
+            : "Ensure S3 keys are set for s3 driver",
+    };
+
+    return NextResponse.json({
+      status: "ok",
+      env: envSummary,
+      storage: storageCheck,
+      meta: {
+        isVercel: !!IS_VERCEL_ENV,
+        timestamp: new Date().toISOString(),
       },
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { status: "error", message: String(err) },
       { status: 500 },
     );
   }

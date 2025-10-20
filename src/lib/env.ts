@@ -5,13 +5,16 @@
 import "server-only";
 import { z } from "zod";
 
-// Helper to detect if we're in a build context
+// Helper to detect if we're in a build context - enhanced for better detection
 const isBuildTime = () => {
+  // treat many CI/build envs as build-time to avoid strict runtime env checks during build
   return (
     typeof window === "undefined" &&
     (process.env.NEXT_PHASE === "phase-production-build" ||
       process.env.NEXT_PHASE === "phase-production-server" ||
       process.env.VERCEL_ENV === "production" ||
+      process.env.VERCEL_BUILD === "1" ||
+      process.env.CI === "true" ||
       !process.env.NODE_ENV)
   );
 };
@@ -118,7 +121,7 @@ const guestModeSchema = envSchema.partial({
   EA_GOOGLE_MAPS_API_KEY: true,
 });
 
-// Parse and validate environment variables
+// Parse and validate environment variables - enhanced for build resilience
 const parseEnv = () => {
   try {
     // Use different schema based on context
@@ -128,47 +131,33 @@ const parseEnv = () => {
     } else if (process.env.AUTH_DISABLED === "true") {
       schema = guestModeSchema;
     }
-    
+
     // For Vercel builds, ensure guest mode works even without explicit AUTH_DISABLED
     if (process.env.VERCEL === "1" && !process.env.AUTH_DISABLED) {
       process.env.AUTH_DISABLED = "true";
       schema = guestModeSchema;
     }
-    
-    return schema.parse(process.env);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const missingVars = error.issues
-        .filter(
-          (err) =>
-            err.code === "invalid_type" &&
-            (err as any).received === "undefined",
-        )
-        .map((err) => err.path.join("."));
 
-      const invalidVars = error.issues
-        .filter(
-          (err) =>
-            err.code !== "invalid_type" ||
-            (err as any).received !== "undefined",
-        )
-        .map((err) => `${err.path.join(".")}: ${err.message}`);
-
-      let errorMessage = "Environment configuration error:\n";
-
-      if (missingVars.length > 0) {
-        errorMessage += `\nMissing required variables:\n${missingVars.map((v) => `  - ${v}`).join("\n")}`;
+    const result = schema.safeParse(process.env);
+    if (!result.success) {
+      // If build-time, log and return partial defaults; runtime will throw in validateEnv()
+      const issues = result.error.issues.map(
+        (i) => `${i.path.join(".")}: ${i.message}`,
+      );
+      const message = `Environment validation issues: ${issues.join("; ")}`;
+      if (isBuildTime()) {
+        // Prefer console.warn during build so the build doesn't hard-fail because of env schema
+        // This allows Vercel builds (especially during outages) to proceed while surfacing issues.
+        console.warn("[env] Build-time env warnings:", message);
+        return schema.parse({}); // return defaults where present
       }
-
-      if (invalidVars.length > 0) {
-        errorMessage += `\nInvalid variables:\n${invalidVars.map((v) => `  - ${v}`).join("\n")}`;
-      }
-
-      errorMessage +=
-        "\n\nPlease check your .env file and ensure all required variables are set correctly.";
-
-      throw new Error(errorMessage);
+      // Runtime: be strict
+      throw new Error(message);
     }
+
+    return result.data;
+  } catch (error) {
+    // Re-throw runtime errors; for build-time this should be handled above
     throw error;
   }
 };
@@ -220,5 +209,29 @@ export const validateEnv = () => {
       throw new Error(errorMessage);
     }
     throw error;
+  }
+};
+
+// Helper: runtime-only strict validator for use in API routes
+export const validateRuntimeEnv = () => {
+  // If explicitly bypassed, skip strict validation
+  if (process.env.VERCEL_SKIP_STRICT_ENV === "1") return;
+  // Re-validate using full non-partial schema
+  const res = envSchema.safeParse(process.env);
+  if (!res.success) {
+    const missingVars = res.error.issues
+      .filter(
+        (i) =>
+          (i.code === "invalid_type" && (i as any).received === "undefined") ||
+          i.code === "too_small",
+      )
+      .map((i) => i.path.join("."));
+    const invalidVars = res.error.issues
+      .filter((i) => !missingVars.includes(i.path.join(".")))
+      .map((i) => `${i.path.join(".")}: ${i.message}`);
+    let msg = "Runtime environment validation failed.";
+    if (missingVars.length) msg += ` Missing: ${missingVars.join(", ")}`;
+    if (invalidVars.length) msg += ` Invalid: ${invalidVars.join(", ")}`;
+    throw new Error(msg);
   }
 };

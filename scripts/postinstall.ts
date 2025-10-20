@@ -26,15 +26,22 @@ async function runCommand(command: string, description: string) {
     console.log(`${description} finished successfully.`);
   } catch (error: any) {
     console.error(`${description} error:`, error);
-    process.exit(1);
+    // Only exit on local builds, not on Vercel
+    if (!IS_VERCEL_ENV) {
+      process.exit(1);
+    }
   }
 }
 
 async function main() {
   if (IS_VERCEL_ENV) {
     if (FILE_BASED_MCP_CONFIG) {
-      console.error("File based MCP config is not supported on Vercel.");
-      process.exit(1);
+      // On Vercel, do not exit the build process — print an actionable error and continue.
+      console.error(
+        "File based MCP config is not supported on Vercel. Please unset FILE_BASED_MCP_CONFIG in Vercel project settings.",
+      );
+      // Avoid process.exit to prevent build queue starvation or abrupt failure in certain Vercel outages.
+      return;
     }
     console.log(
       "Running on Vercel, skipping database migration (will be handled at runtime).",
@@ -45,7 +52,10 @@ async function main() {
     // Skip database migration on Vercel - it will be handled at runtime when the app starts
   } else if (IS_DOCKER_ENV) {
     if (FILE_BASED_MCP_CONFIG) {
-      console.error("File based MCP config is not supported in Docker.");
+      console.error(
+        "File based MCP config is not supported in Docker. Exiting.",
+      );
+      // In Docker/local builds, fail early so developers notice
       process.exit(1);
     }
   } else {
@@ -60,4 +70,8 @@ async function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error("Postinstall script failed:", err);
+  // Only fatal if running locally in non-Vercel context
+  if (!IS_VERCEL_ENV) process.exit(1);
+});

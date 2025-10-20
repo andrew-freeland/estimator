@@ -1,5 +1,5 @@
 import "server-only";
-import { IS_DEV } from "lib/const";
+import { IS_DEV, IS_VERCEL_ENV } from "lib/const";
 import type { FileStorage } from "./file-storage.interface";
 import { createS3FileStorage } from "./s3-file-storage";
 import { createVercelBlobStorage } from "./vercel-blob-storage";
@@ -10,14 +10,23 @@ export type FileStorageDriver = "vercel-blob" | "s3" | "gcs";
 
 const resolveDriver = (): FileStorageDriver => {
   const candidate = process.env.FILE_STORAGE_TYPE;
-
   const normalized = candidate?.trim().toLowerCase();
-  if (normalized === "vercel-blob" || normalized === "s3" || normalized === "gcs") {
-    return normalized;
+
+  // If running on Vercel and storage type isn't explicitly set, prefer vercel-blob.
+  if (IS_VERCEL_ENV && !normalized) {
+    return "vercel-blob";
   }
 
-  // Default to GCS for Estimator Assistant
-  return "gcs";
+  if (
+    normalized === "vercel-blob" ||
+    normalized === "s3" ||
+    normalized === "gcs"
+  ) {
+    return normalized as FileStorageDriver;
+  }
+
+  // Fallback default: vercel-blob for cloud deployments, otherwise gcs as legacy default
+  return IS_VERCEL_ENV ? "vercel-blob" : "gcs";
 };
 
 declare global {
@@ -28,18 +37,13 @@ declare global {
 const storageDriver = resolveDriver();
 
 const createFileStorage = (): FileStorage => {
-  logger.info(`Creating file storage: ${storageDriver}`);
-  switch (storageDriver) {
-    case "vercel-blob":
-      return createVercelBlobStorage();
-    case "s3":
-      return createS3FileStorage();
-    case "gcs":
-      return createGCSFileStorage();
-    default: {
-      const exhaustiveCheck: never = storageDriver;
-      throw new Error(`Unsupported file storage driver: ${exhaustiveCheck}`);
-    }
+  logger.info(`Initializing file storage driver: ${storageDriver}`);
+  if (storageDriver === "vercel-blob") {
+    return createVercelBlobStorage();
+  } else if (storageDriver === "s3") {
+    return createS3FileStorage();
+  } else {
+    return createGCSFileStorage();
   }
 };
 
@@ -50,4 +54,8 @@ if (IS_DEV) {
   globalThis.__server__file_storage__ = serverFileStorage;
 }
 
+export const fileStorage =
+  globalThis.__server__file_storage__ ??
+  (globalThis.__server__file_storage__ = createFileStorage());
+export const fileStorageDriver = storageDriver;
 export { serverFileStorage, storageDriver };
