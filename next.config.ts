@@ -14,7 +14,9 @@ export default () => {
     },
     env: {
       NO_HTTPS: process.env.NO_HTTPS,
+      AUTH_DISABLED: process.env.AUTH_DISABLED || "true",
     },
+    trailingSlash: true,
     // Build optimization settings
     eslint: {
       ignoreDuringBuilds: true,

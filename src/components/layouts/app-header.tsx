@@ -109,7 +109,7 @@ export function AppHeader({ session }: AppHeaderProps) {
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-2 border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white"
+              className="flex items-center gap-2 border-yellow-500 text-yellow-600 hover:bg-yellow-500 hover:text-white transition-all duration-200"
             >
               <LogIn className="size-4" />
               Sign In
@@ -119,7 +119,7 @@ export function AppHeader({ session }: AppHeaderProps) {
             <Button
               variant="default"
               size="sm"
-              className="flex items-center gap-2 bg-brand-orange hover:bg-brand-orange/90"
+              className="flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 text-white transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <UserPlus className="size-4" />
               Sign Up

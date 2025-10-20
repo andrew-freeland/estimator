@@ -9,7 +9,7 @@ import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 
 // Build-safe database connection with fallback
 const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-const isGuestMode = process.env.AUTH_DISABLED === "true";
+const isGuestMode = process.env.AUTH_DISABLED === "true" || process.env.VERCEL === "1";
 
 let pgDbInstance: ReturnType<typeof drizzlePg> | null = null;
 

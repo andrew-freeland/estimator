@@ -128,6 +128,13 @@ const parseEnv = () => {
     } else if (process.env.AUTH_DISABLED === "true") {
       schema = guestModeSchema;
     }
+    
+    // For Vercel builds, ensure guest mode works even without explicit AUTH_DISABLED
+    if (process.env.VERCEL === "1" && !process.env.AUTH_DISABLED) {
+      process.env.AUTH_DISABLED = "true";
+      schema = guestModeSchema;
+    }
+    
     return schema.parse(process.env);
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -1,9 +1,24 @@
 {
-  "git": {
-    "deploymentEnabled": {
-      "main": true
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "runtime": "nodejs18.x"
     }
   },
-  "buildCommand": "pnpm run build",
-  "outputDirectory": ".next"
+  "env": {
+    "AUTH_DISABLED": "true",
+    "NODE_ENV": "production",
+    "VERCEL": "1"
+  },
+  "build": {
+    "env": {
+      "AUTH_DISABLED": "true",
+      "NODE_ENV": "production",
+      "VERCEL": "1"
+    }
+  },
+  "regions": ["iad1"],
+  "installCommand": "npm install --legacy-peer-deps"
 }
