@@ -1,6 +1,6 @@
 {
   "name": "estimator-assistant",
-  "version": "1.24.1",
+  "version": "1.5.2",
   "private": true,
   "author": "Andrew Cunningham, Builder's Business Partner LLC",
   "license": "MIT",
@@ -164,7 +164,10 @@
     "vitest": "^3.2.4"
   },
   "lint-staged": {
-    "*.{js,json,mjs,ts,yaml,tsx,css}": ["pnpm format", "pnpm lint:fix"]
+    "*.{js,json,mjs,ts,yaml,tsx,css}": [
+      "pnpm format",
+      "pnpm lint:fix"
+    ]
   },
   "packageManager": "pnpm@10.2.1",
   "engines": {
