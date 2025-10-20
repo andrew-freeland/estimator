@@ -54,8 +54,6 @@ if (IS_DEV) {
   globalThis.__server__file_storage__ = serverFileStorage;
 }
 
-export const fileStorage =
-  globalThis.__server__file_storage__ ??
-  (globalThis.__server__file_storage__ = createFileStorage());
+export const fileStorage = serverFileStorage;
 export const fileStorageDriver = storageDriver;
 export { serverFileStorage, storageDriver };
