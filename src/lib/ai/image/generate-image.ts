@@ -76,9 +76,9 @@ export const generateImageWithNanoBanana = async (
     return { images: [] };
   }
 
-  const { GoogleGenAI, Part, Content } = await import("@google/genai");
-  type GeminiPart = typeof Part;
-  type GeminiMessage = typeof Content;
+  const { GoogleGenAI } = await import("@google/genai");
+  // type GeminiPart = typeof Part;
+  // type GeminiMessage = typeof Content;
   const ai = new GoogleGenAI({
     apiKey: apiKey,
   });

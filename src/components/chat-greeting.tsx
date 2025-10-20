@@ -64,7 +64,7 @@ export const ChatGreeting = () => {
             <div className="flex items-center gap-3">
               <BBPLogo size="lg" className="text-yellow-600" />
               <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-yellow-500 bg-clip-text text-transparent">
-                Builder's Business Partner
+                Builder&apos;s Business Partner
               </h1>
             </div>
             <motion.div
@@ -128,8 +128,8 @@ export const ChatGreeting = () => {
         >
           <p className="text-sm text-gray-600">
             💡 <strong>Pro Tip:</strong> Start by describing your project, and
-            I'll help you create a detailed estimate with materials, labor, and
-            timeline.
+            I&apos;ll help you create a detailed estimate with materials, labor,
+            and timeline.
           </p>
         </motion.div>
       </div>

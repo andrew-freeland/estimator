@@ -13,7 +13,7 @@ async function loadStaticModels() {
     { xai },
     { openrouter },
     { createGroq },
-    { createOpenAICompatibleModels, openaiCompatibleModelsSafeParse },
+    // { createOpenAICompatibleModels, openaiCompatibleModelsSafeParse },
   ] = await Promise.all([
     import("ollama-ai-provider-v2"),
     import("@ai-sdk/openai"),

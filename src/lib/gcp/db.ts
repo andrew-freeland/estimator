@@ -34,8 +34,9 @@ async function getDatabaseConnection() {
     return { db: dbInstance, pool: poolInstance };
   }
 
-  const EA_DATABASE_URL = process.env.EA_DATABASE_URL || process.env.DATABASE_URL;
-  
+  const EA_DATABASE_URL =
+    process.env.EA_DATABASE_URL || process.env.DATABASE_URL;
+
   if (!EA_DATABASE_URL) {
     throw new Error(
       "EA_DATABASE_URL or DATABASE_URL environment variable is required",
@@ -60,7 +61,7 @@ async function getDatabaseConnection() {
 
   // Initialize drizzle with the postgres pool
   dbInstance = drizzle(poolInstance);
-  
+
   return { db: dbInstance, pool: poolInstance };
 }
 
@@ -72,11 +73,11 @@ export async function getDb() {
 
 // For backward compatibility, export a getter that throws if accessed at module level
 export const db = new Proxy({} as ReturnType<typeof drizzle>, {
-  get(target, prop) {
+  get(_target, _prop) {
     throw new Error(
-      "Database connection accessed at module level. Use getDb() function instead for runtime-safe access."
+      "Database connection accessed at module level. Use getDb() function instead for runtime-safe access.",
     );
-  }
+  },
 });
 
 // Vector search utilities for RAG embeddings

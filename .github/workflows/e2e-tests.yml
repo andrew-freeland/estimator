@@ -34,7 +34,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: testuser
           POSTGRES_PASSWORD: testpass
@@ -104,6 +104,10 @@ jobs:
             echo "PostgreSQL failed to start after 40 seconds"
             exit 1
           fi
+
+      - name: Enable pgvector extension
+        run: |
+          PGPASSWORD=testpass psql -h localhost -U testuser -d better_chatbot_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
       - name: Run database migrations
         run: pnpm db:migrate
