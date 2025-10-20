@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       mentions = [],
     } = chatApiSchemaRequestBodySchema.parse(json);
 
-    const model = customModelProvider.getModel(chatModel);
+    const model = await customModelProvider.getModel(chatModel);
 
     let thread = await chatRepository.selectThreadDetails(id);
 

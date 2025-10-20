@@ -168,7 +168,7 @@ export async function generateExampleToolSchemaAction(options: {
   toolInfo: MCPToolInfo;
   prompt?: string;
 }) {
-  const model = customModelProvider.getModel(options.model);
+  const model = await customModelProvider.getModel(options.model);
 
   const schema = jsonSchema(
     toAny({
@@ -260,8 +260,9 @@ export async function generateObjectAction({
   };
   schema: JSONSchema7 | ObjectJsonSchema7;
 }) {
+  const modelInstance = await customModelProvider.getModel(model);
   const result = await generateObject({
-    model: customModelProvider.getModel(model),
+    model: modelInstance,
     system: prompt.system,
     prompt: prompt.user || "",
     schema: jsonSchemaToZod(schema),

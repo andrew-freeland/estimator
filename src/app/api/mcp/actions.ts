@@ -95,7 +95,7 @@ export async function saveMcpClientAction(
 
     // Check if a featured server with this name already exists
     const existing = await mcpRepository.existsByServerName(server.name);
-    if (existing && !server.id) {
+    if (existing && !(server as any).id) {
       throw new Error("A featured MCP server with this name already exists");
     }
   }
@@ -104,7 +104,7 @@ export async function saveMcpClientAction(
   const serverWithUser = {
     ...server,
     userId: currentUser.id,
-    visibility: server.visibility || "private",
+    visibility: (server as any).visibility || "private",
   };
 
   return mcpClientsManager.persistClient(serverWithUser);

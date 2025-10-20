@@ -194,7 +194,7 @@ export const createGCSFileStorage = (): FileStorage => {
       };
 
       // Generate public URL
-      const sourceUrl = `https://storage.googleapis.com/${EA_GCS_BUCKET_NAME}/${pathname}`;
+      const sourceUrl = `https://storage.googleapis.com/${process.env.EA_GCS_BUCKET_NAME}/${pathname}`;
 
       return {
         key: pathname,
@@ -269,7 +269,7 @@ export const createGCSFileStorage = (): FileStorage => {
     async getSourceUrl(key) {
       try {
         await getFileInfo(key); // Verify file exists
-        return `https://storage.googleapis.com/${EA_GCS_BUCKET_NAME}/${key}`;
+        return `https://storage.googleapis.com/${process.env.EA_GCS_BUCKET_NAME}/${key}`;
       } catch (error: unknown) {
         if (error instanceof FileNotFoundError) {
           return null;
@@ -282,7 +282,7 @@ export const createGCSFileStorage = (): FileStorage => {
       try {
         await getFileInfo(key); // Verify file exists
         // For public files, return the public URL
-        return `https://storage.googleapis.com/${EA_GCS_BUCKET_NAME}/${key}`;
+        return `https://storage.googleapis.com/${process.env.EA_GCS_BUCKET_NAME}/${key}`;
       } catch (error: unknown) {
         if (error instanceof FileNotFoundError) {
           return null;

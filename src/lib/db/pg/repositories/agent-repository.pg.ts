@@ -9,14 +9,12 @@ export const pgAgentRepository: AgentRepository = {
     const [result] = await db
       .insert(AgentTable)
       .values({
-        id: generateUUID(),
         name: agent.name,
         description: agent.description,
         icon: agent.icon,
         userId: agent.userId,
         instructions: agent.instructions,
         visibility: agent.visibility || "private",
-        createdAt: new Date(),
         updatedAt: new Date(),
       })
       .returning();
@@ -112,7 +110,6 @@ export const pgAgentRepository: AgentRepository = {
       .update(AgentTable)
       .set({
         ...agent,
-        updatedAt: new Date(),
       })
       .where(
         and(

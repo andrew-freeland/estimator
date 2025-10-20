@@ -14,12 +14,9 @@ export const pgArchiveRepository: ArchiveRepository = {
     const [result] = await db
       .insert(ArchiveTable)
       .values({
-        id: generateUUID(),
         name: archive.name,
         description: archive.description,
         userId: archive.userId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       })
       .returning();
     return result as Archive;

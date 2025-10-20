@@ -173,7 +173,7 @@ export class MCPClientsManager {
       id = entity.id;
     }
     await this.addClient(id, server.name, server.config).catch((err) => {
-      if (!server.id) {
+      if (!(server as any).id) {
         void this.removeClient(id);
       }
       throw err;

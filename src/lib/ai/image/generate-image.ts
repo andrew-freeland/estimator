@@ -10,6 +10,21 @@ import {
 } from "ai";
 import { isString } from "lib/utils";
 import logger from "logger";
+import { GoogleGenAI } from "@google/genai";
+
+// Define Gemini types
+type GeminiPart = {
+  text?: string;
+  inlineData?: {
+    mimeType: string;
+    data: string;
+  };
+};
+
+type GeminiMessage = {
+  role: "user" | "model";
+  parts: GeminiPart[];
+};
 
 type GenerateImageOptions = {
   messages?: ModelMessage[];

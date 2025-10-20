@@ -36,8 +36,9 @@ export async function POST(request: Request) {
       `chatModel: ${chatModel?.provider}/${chatModel?.model}, threadId: ${threadId}`,
     );
 
+    const model = await customModelProvider.getModel(chatModel);
     const result = streamText({
-      model: customModelProvider.getModel(chatModel),
+      model,
       system: CREATE_THREAD_TITLE_PROMPT,
       experimental_transform: smoothStream({ chunking: "word" }),
       prompt: message,

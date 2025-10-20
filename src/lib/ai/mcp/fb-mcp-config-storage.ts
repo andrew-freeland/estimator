@@ -193,9 +193,9 @@ function fillMcpServerTable(
 ): typeof McpServerTable.$inferSelect {
   return {
     ...server,
-    id: server.name,
+    id: (server as any).id || server.name,
     userId: server.userId || "file-based-user",
-    visibility: server.visibility || "private",
+    visibility: (server as any).visibility || "private",
     enabled: true,
     createdAt: new Date(),
     updatedAt: new Date(),

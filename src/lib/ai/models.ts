@@ -254,7 +254,7 @@ export const customModelProvider = {
   },
 };
 
-function checkProviderAPIKey(provider: keyof typeof staticModels) {
+function checkProviderAPIKey(provider: string) {
   let key: string | undefined;
   switch (provider) {
     case "openai":

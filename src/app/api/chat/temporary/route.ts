@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       instructions?: string;
     };
     logger.info(`model: ${chatModel?.provider}/${chatModel?.model}`);
-    const model = customModelProvider.getModel(chatModel);
+    const model = await customModelProvider.getModel(chatModel);
 
     // For non-authenticated users, use a default system prompt
     let systemPrompt =

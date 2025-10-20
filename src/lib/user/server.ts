@@ -9,8 +9,9 @@ import { notFound } from "next/navigation";
 import { customModelProvider } from "@/lib/ai/models";
 
 // Helper function to get model provider from model name
-const getModelProvider = (modelName: string): string => {
-  for (const { provider, models } of customModelProvider.modelsInfo) {
+const getModelProvider = async (modelName: string): Promise<string> => {
+  const modelsInfo = await customModelProvider.getModelsInfo();
+  for (const { provider, models } of modelsInfo) {
     for (const model of models) {
       if (model.name === modelName) {
         return provider;
@@ -110,12 +111,16 @@ export async function getUserStats(userId?: string): Promise<{
   const stats = await userRepository.getUserStats(resolvedUserId);
 
   // Add provider information to each model stat
+  const modelStatsWithProviders = await Promise.all(
+    stats.modelStats.map(async (stat) => ({
+      ...stat,
+      provider: await getModelProvider(stat.model),
+    })),
+  );
+
   return {
     ...stats,
-    modelStats: stats.modelStats.map((stat) => ({
-      ...stat,
-      provider: getModelProvider(stat.model),
-    })),
+    modelStats: modelStatsWithProviders,
   };
 }
 
