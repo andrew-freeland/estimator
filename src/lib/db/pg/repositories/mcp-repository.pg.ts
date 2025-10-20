@@ -9,20 +9,16 @@ export const pgMcpRepository: MCPRepository = {
     const [result] = await db
       .insert(McpServerTable)
       .values({
-        id: server.id ?? generateUUID(),
         name: server.name,
         config: server.config,
         userId: server.userId,
         visibility: server.visibility ?? "private",
         enabled: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      } as any)
       .onConflictDoUpdate({
         target: [McpServerTable.id],
         set: {
           config: server.config,
-          updatedAt: new Date(),
         },
       })
       .returning();
@@ -73,7 +69,7 @@ export const pgMcpRepository: MCPRepository = {
   async updateVisibility(id, visibility) {
     await db
       .update(McpServerTable)
-      .set({ visibility, updatedAt: new Date() })
+      .set({ visibility } as any)
       .where(eq(McpServerTable.id, id));
   },
 

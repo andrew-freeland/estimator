@@ -125,7 +125,7 @@ const guestModeSchema = envSchema.partial({
 const parseEnv = () => {
   try {
     // Use different schema based on context
-    let schema = envSchema;
+    let schema: any = envSchema;
     if (isBuildTime()) {
       schema = buildTimeSchema;
     } else if (process.env.AUTH_DISABLED === "true") {
