@@ -9,11 +9,12 @@ import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 
 // Build-safe database connection with fallback
 const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+const isGuestMode = process.env.AUTH_DISABLED === "true";
 
 let pgDbInstance: ReturnType<typeof drizzlePg> | null = null;
 
 if (!dbUrl) {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" || isGuestMode) {
     console.warn(
       "⚠️ No POSTGRES_URL or DATABASE_URL set during build — skipping DB init",
     );
@@ -43,7 +44,7 @@ if (!dbUrl) {
     });
   } catch (error) {
     console.error("Invalid database URL:", error);
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" || isGuestMode) {
       console.warn("⚠️ Invalid database URL during build — skipping DB init");
       pgDbInstance = null;
     } else {

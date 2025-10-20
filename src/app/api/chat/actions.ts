@@ -29,6 +29,7 @@ import { serverCache } from "lib/cache";
 import { CacheKeys } from "lib/cache/cache-keys";
 import { getSession } from "auth/server";
 import logger from "logger";
+import { isGuestMode } from "lib/env";
 
 import { JSONSchema7 } from "json-schema";
 import { ObjectJsonSchema7 } from "app-types/util";
@@ -36,6 +37,12 @@ import { jsonSchemaToZod } from "lib/json-schema-to-zod";
 import { Agent } from "app-types/agent";
 
 export async function getUserId() {
+  // In guest mode, return a temporary user ID
+  if (isGuestMode) {
+    console.log("getUserId: Guest mode - returning temporary user ID");
+    return "guest-user-" + crypto.randomUUID();
+  }
+
   const session = await getSession();
   const userId = session?.user?.id;
   if (!userId) {
@@ -48,10 +55,14 @@ export async function generateTitleFromUserMessageAction({
   message,
   model,
 }: { message: UIMessage; model: LanguageModel }) {
-  const session = await getSession();
-  if (!session) {
-    throw new Error("Unauthorized");
+  // In guest mode, skip session check
+  if (!isGuestMode) {
+    const session = await getSession();
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
   }
+
   const prompt = toAny(message.parts?.at(-1))?.text || "unknown";
 
   const { text: title } = await generateText({
@@ -64,6 +75,12 @@ export async function generateTitleFromUserMessageAction({
 }
 
 export async function selectThreadWithMessagesAction(threadId: string) {
+  // In guest mode, return null (no persistence)
+  if (isGuestMode) {
+    console.log("selectThreadWithMessagesAction: Guest mode - no persistence");
+    return null;
+  }
+
   const session = await getSession();
   if (!session) {
     throw new Error("Unauthorized");
@@ -82,10 +99,20 @@ export async function selectThreadWithMessagesAction(threadId: string) {
 }
 
 export async function deleteMessageAction(messageId: string) {
+  // In guest mode, skip DB operations
+  if (isGuestMode) {
+    console.log("deleteMessageAction: Guest mode - no persistence");
+    return;
+  }
   await chatRepository.deleteChatMessage(messageId);
 }
 
 export async function deleteThreadAction(threadId: string) {
+  // In guest mode, skip DB operations
+  if (isGuestMode) {
+    console.log("deleteThreadAction: Guest mode - no persistence");
+    return;
+  }
   await chatRepository.deleteThread(threadId);
 }
 
@@ -93,6 +120,13 @@ export async function deleteMessagesByChatIdAfterTimestampAction(
   messageId: string,
 ) {
   "use server";
+  // In guest mode, skip DB operations
+  if (isGuestMode) {
+    console.log(
+      "deleteMessagesByChatIdAfterTimestampAction: Guest mode - no persistence",
+    );
+    return;
+  }
   await chatRepository.deleteMessagesByChatIdAfterTimestamp(messageId);
 }
 
@@ -100,16 +134,31 @@ export async function updateThreadAction(
   id: string,
   thread: Partial<Omit<ChatThread, "createdAt" | "updatedAt" | "userId">>,
 ) {
+  // In guest mode, skip DB operations
+  if (isGuestMode) {
+    console.log("updateThreadAction: Guest mode - no persistence");
+    return;
+  }
   const userId = await getUserId();
   await chatRepository.updateThread(id, { ...thread, userId });
 }
 
 export async function deleteThreadsAction() {
+  // In guest mode, skip DB operations
+  if (isGuestMode) {
+    console.log("deleteThreadsAction: Guest mode - no persistence");
+    return;
+  }
   const userId = await getUserId();
   await chatRepository.deleteAllThreads(userId);
 }
 
 export async function deleteUnarchivedThreadsAction() {
+  // In guest mode, skip DB operations
+  if (isGuestMode) {
+    console.log("deleteUnarchivedThreadsAction: Guest mode - no persistence");
+    return;
+  }
   const userId = await getUserId();
   await chatRepository.deleteUnarchivedThreads(userId);
 }
@@ -141,6 +190,14 @@ export async function generateExampleToolSchemaAction(options: {
 }
 
 export async function rememberMcpServerCustomizationsAction(userId: string) {
+  // In guest mode, return empty object (no persistence)
+  if (isGuestMode) {
+    console.log(
+      "rememberMcpServerCustomizationsAction: Guest mode - no persistence",
+    );
+    return {};
+  }
+
   const key = CacheKeys.mcpServerCustomizations(userId);
 
   const cachedMcpServerCustomizations =
@@ -217,6 +274,13 @@ export async function rememberAgentAction(
   userId: string,
 ) {
   if (!agent) return undefined;
+
+  // In guest mode, return undefined (no persistence)
+  if (isGuestMode) {
+    console.log("rememberAgentAction: Guest mode - no persistence");
+    return undefined;
+  }
+
   const key = CacheKeys.agentInstructions(agent);
   let cachedAgent = await serverCache.get<Agent | null>(key);
   if (!cachedAgent) {
@@ -233,6 +297,12 @@ export async function exportChatAction({
   threadId: string;
   expiresAt?: Date;
 }) {
+  // In guest mode, return error (no persistence)
+  if (isGuestMode) {
+    console.log("exportChatAction: Guest mode - no persistence");
+    return new Response("Export not available in guest mode", { status: 403 });
+  }
+
   const userId = await getUserId();
 
   const isAccess = await chatRepository.checkAccess(threadId, userId);

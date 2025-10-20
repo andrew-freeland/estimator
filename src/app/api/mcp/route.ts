@@ -5,6 +5,8 @@ import { saveMcpClientAction } from "./actions";
 import { canCreateMCP } from "lib/auth/permissions";
 import { logger } from "better-auth";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session?.user?.id) {

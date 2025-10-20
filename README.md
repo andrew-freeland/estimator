@@ -40,6 +40,30 @@ pnpm dev
 Populate `.env.local` following `.env.example`.
 Requires PostgreSQL connection and valid BetterAuth credentials.
 
+## 🎭 Guest Mode (No Auth, No Persistence)
+
+For quick demos or testing without authentication setup, you can run the app in Guest Mode:
+
+```bash
+AUTH_DISABLED=true pnpm dev
+```
+
+**Guest Mode Behavior:**
+- ✅ Chat interface loads immediately without login
+- ✅ Sign In/Sign Up buttons visible in header
+- ✅ No database persistence (messages are temporary)
+- ✅ Admin routes still protected (redirect to sign-in)
+- ✅ No environment variables required for basic functionality
+
+**Required Environment Variables for Guest Mode:**
+```bash
+AUTH_DISABLED=true
+NODE_ENV=development
+BASE_URL=http://localhost:3000
+```
+
+**Note:** Guest Mode is intended for demos and testing. For production use, configure proper authentication and database connections.
+
 ---
 
 ## 🧾 License & Attribution

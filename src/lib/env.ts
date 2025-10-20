@@ -93,6 +93,7 @@ const envSchema = z.object({
   ENABLE_GOOGLE_WORKSPACE: z.string().optional(),
   ENABLE_MAPS: z.string().optional(),
   ENABLE_VECTOR_SEARCH: z.string().optional(),
+  AUTH_DISABLED: z.string().optional(),
 });
 
 // Build-time schema (relaxed requirements)
@@ -104,11 +105,29 @@ const buildTimeSchema = envSchema.partial({
   BETTER_AUTH_SECRET: true,
 });
 
+// Guest mode schema (when AUTH_DISABLED=true)
+const guestModeSchema = envSchema.partial({
+  DATABASE_URL: true,
+  EA_GCP_PROJECT_ID: true,
+  EA_GCS_BUCKET_NAME: true,
+  OPENAI_API_KEY: true,
+  BETTER_AUTH_SECRET: true,
+  EA_GOOGLE_CLIENT_ID: true,
+  EA_GOOGLE_CLIENT_SECRET: true,
+  EA_GOOGLE_API_KEY: true,
+  EA_GOOGLE_MAPS_API_KEY: true,
+});
+
 // Parse and validate environment variables
 const parseEnv = () => {
   try {
     // Use different schema based on context
-    const schema = isBuildTime() ? buildTimeSchema : envSchema;
+    let schema = envSchema;
+    if (isBuildTime()) {
+      schema = buildTimeSchema;
+    } else if (process.env.AUTH_DISABLED === "true") {
+      schema = guestModeSchema;
+    }
     return schema.parse(process.env);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -154,6 +173,7 @@ export const env = parseEnv();
 export const isDevelopment = env.NODE_ENV === "development";
 export const isProduction = env.NODE_ENV === "production";
 export const isTest = env.NODE_ENV === "test";
+export const isGuestMode = process.env.AUTH_DISABLED === "true";
 
 // Runtime validation function - call this explicitly when needed
 export const validateEnv = () => {

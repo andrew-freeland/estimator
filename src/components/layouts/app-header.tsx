@@ -8,6 +8,7 @@ import {
   MessageCircleDashed,
   PanelLeft,
   LogIn,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "ui/button";
 import { Separator } from "ui/separator";
@@ -101,7 +102,7 @@ export function AppHeader({ session }: AppHeaderProps) {
       {componentByPage}
       <div className="flex-1" />
 
-      {/* Sign-in button for non-authenticated users */}
+      {/* Sign-in and Sign-up buttons for non-authenticated users */}
       {!session && (
         <div className="flex items-center gap-2">
           <Link href="/sign-in">
@@ -112,6 +113,16 @@ export function AppHeader({ session }: AppHeaderProps) {
             >
               <LogIn className="size-4" />
               Sign In
+            </Button>
+          </Link>
+          <Link href="/sign-up">
+            <Button
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2 bg-brand-orange hover:bg-brand-orange/90"
+            >
+              <UserPlus className="size-4" />
+              Sign Up
             </Button>
           </Link>
         </div>

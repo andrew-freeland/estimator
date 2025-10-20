@@ -15,8 +15,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin/users", request.url));
   }
 
-  // Temporarily disable session check for testing
-  // TODO: Re-enable after fixing session cookie issue
+  // Check if guest mode is enabled
+  const isGuestMode = process.env.AUTH_DISABLED === "true";
+
+  if (isGuestMode) {
+    console.log("Middleware: Guest mode enabled - skipping auth checks");
+    // In guest mode, only protect admin routes
+    if (pathname.startsWith("/admin")) {
+      return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Normal auth mode - check for session
   console.log("Middleware: Checking session for", pathname);
   console.log(
     "Middleware: Available cookies:",
