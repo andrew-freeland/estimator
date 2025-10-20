@@ -23,6 +23,7 @@ export default () => {
     },
     typescript: {
       ignoreBuildErrors: true,
+      tsconfigPath: "./tsconfig.json",
     },
     productionBrowserSourceMaps: false,
     experimental: {
