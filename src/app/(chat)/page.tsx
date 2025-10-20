@@ -1,5 +1,5 @@
 import ChatBot from "@/components/chat-bot";
-import { SimplifiedChatBot } from "@/components/simplified-chat-bot";
+import SimplifiedChatBot from "@/components/simplified-chat-bot";
 import { generateUUID } from "lib/utils";
 import { getSession } from "auth/server";
 import { TemporaryWorkNotice } from "@/components/temporary-work-notice";
