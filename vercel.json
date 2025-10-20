@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
   "regions": ["iad1"],
-  "installCommand": "npm install"
+  "installCommand": "corepack enable && pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm run build"
 }
