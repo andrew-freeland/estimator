@@ -17,25 +17,8 @@ jobs:
           cache: pnpm
       - run: corepack enable && corepack prepare pnpm@latest --activate
       - run: pnpm install --frozen-lockfile
-      - name: Run type check (capture errors)
-        id: tsc
-        run: |
-          pnpm check-types --noEmit 2>&1 | tee ts-errors.txt || true
-      - name: Upload ts errors
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ts-errors
-          path: ts-errors.txt
-      - name: Type-check results
-        run: |
-          if [ -s ts-errors.txt ]; then
-            echo "TypeScript errors found:"
-            head -20 ts-errors.txt
-            echo "::warning::TypeScript errors found but build continues due to ignoreBuildErrors setting"
-          else
-            echo "No TypeScript errors found"
-          fi
+      - name: Run type check
+        run: pnpm check-types
 
   build:
     needs: type-check
