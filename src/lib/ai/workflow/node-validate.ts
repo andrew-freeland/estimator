@@ -67,17 +67,13 @@ export function allNodeValidate({
   }
 
   for (const node of nodes) {
-    const result = safe()
-      .ifOk(() => nodeValidate({ node: node.data, nodes, edges }))
-      .ifFail((err) => {
-        return {
-          node,
-          errorMessage: err.message,
-        };
-      })
-      .unwrap();
-    if (result) {
-      return result;
+    try {
+      nodeValidate({ node: node.data, nodes, edges });
+    } catch (err) {
+      return {
+        node,
+        errorMessage: (err as Error).message,
+      };
     }
   }
   return true;

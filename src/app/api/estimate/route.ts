@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { estimatorOrchestrator } from "@/agents/orchestrator";
 import { withSecurity } from "@/lib/security";
 import { logEstimateGeneration } from "@/lib/logs";
+import { validateRuntimeEnv } from "lib/env";
 import { z } from "zod";
 
 // Request validation schema
@@ -30,6 +31,9 @@ const EstimateRequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Strict runtime env check - will throw with a clear message if required vars are missing
+  validateRuntimeEnv();
+
   return withSecurity(
     request,
     async (context) => {

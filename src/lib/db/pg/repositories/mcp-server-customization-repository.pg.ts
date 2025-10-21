@@ -57,14 +57,14 @@ export const pgMcpServerCustomizationRepository: McpServerCustomizationRepositor
     },
 
     async upsertMcpServerCustomization(data) {
-      const now = new Date();
+      const _now = new Date();
       const [result] = await db
         .insert(McpServerCustomizationTable)
         .values({
           userId: data.userId,
           mcpServerId: data.mcpServerId,
           prompt: data.prompt ?? null,
-        })
+        } as any)
         .onConflictDoUpdate({
           target: [
             McpServerCustomizationTable.userId,
@@ -72,8 +72,7 @@ export const pgMcpServerCustomizationRepository: McpServerCustomizationRepositor
           ],
           set: {
             prompt: data.prompt ?? null,
-            updatedAt: now,
-          },
+          } as any,
         })
         .returning();
       return result;

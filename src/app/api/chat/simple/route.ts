@@ -3,13 +3,17 @@
 // Just connects to OpenAI without complex agents
 
 import { streamText } from "ai";
-import { env, validateEnv } from "@/lib/env";
+import { env, validateEnvGraceful } from "@/lib/env";
 import { customModelProvider } from "@/lib/ai/models";
 
 export async function POST(request: Request) {
   try {
-    // Validate environment variables at runtime
-    validateEnv();
+    // Validate environment variables at runtime with graceful handling
+    const envValidation = validateEnvGraceful();
+    if (!envValidation.isValid) {
+      console.warn("Environment validation issues:", envValidation.errors);
+      // Continue with degraded functionality rather than failing completely
+    }
 
     const { messages } = await request.json();
 

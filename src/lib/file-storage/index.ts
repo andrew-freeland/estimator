@@ -37,13 +37,46 @@ declare global {
 const storageDriver = resolveDriver();
 
 const createFileStorage = (): FileStorage => {
-  logger.info(`Initializing file storage driver: ${storageDriver}`);
-  if (storageDriver === "vercel-blob") {
-    return createVercelBlobStorage();
-  } else if (storageDriver === "s3") {
-    return createS3FileStorage();
-  } else {
-    return createGCSFileStorage();
+  try {
+    logger.info(`Initializing file storage driver: ${storageDriver}`);
+    if (storageDriver === "vercel-blob") {
+      return createVercelBlobStorage();
+    } else if (storageDriver === "s3") {
+      return createS3FileStorage();
+    } else {
+      return createGCSFileStorage();
+    }
+  } catch (error) {
+    logger.warn(
+      `File storage initialization failed: ${error.message}. Using fallback.`,
+    );
+    // Return a stub that rejects operations with clear errors
+    return {
+      async upload() {
+        throw new Error("File storage unavailable - check configuration");
+      },
+      async createUploadUrl() {
+        return null;
+      },
+      async download() {
+        throw new Error("File storage unavailable - check configuration");
+      },
+      async delete() {
+        throw new Error("File storage unavailable - check configuration");
+      },
+      async exists() {
+        return false;
+      },
+      async getMetadata() {
+        return null;
+      },
+      async getSourceUrl() {
+        return null;
+      },
+      async getDownloadUrl() {
+        return null;
+      },
+    };
   }
 };
 
@@ -54,8 +87,6 @@ if (IS_DEV) {
   globalThis.__server__file_storage__ = serverFileStorage;
 }
 
-export const fileStorage =
-  globalThis.__server__file_storage__ ??
-  (globalThis.__server__file_storage__ = createFileStorage());
+export const fileStorage = serverFileStorage;
 export const fileStorageDriver = storageDriver;
 export { serverFileStorage, storageDriver };

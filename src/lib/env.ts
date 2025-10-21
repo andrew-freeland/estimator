@@ -125,7 +125,7 @@ const guestModeSchema = envSchema.partial({
 const parseEnv = () => {
   try {
     // Use different schema based on context
-    let schema = envSchema;
+    let schema: any = envSchema;
     if (isBuildTime()) {
       schema = buildTimeSchema;
     } else if (process.env.AUTH_DISABLED === "true") {
@@ -212,6 +212,45 @@ export const validateEnv = () => {
   }
 };
 
+// Graceful validation function for production environments
+export const validateEnvGraceful = () => {
+  try {
+    envSchema.parse(process.env);
+    return { isValid: true, errors: [] };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const missingVars = error.issues
+        .filter(
+          (err) =>
+            err.code === "invalid_type" &&
+            (err as any).received === "undefined",
+        )
+        .map((err) => err.path.join("."));
+
+      const invalidVars = error.issues
+        .filter(
+          (err) =>
+            err.code !== "invalid_type" ||
+            (err as any).received !== "undefined",
+        )
+        .map((err) => `${err.path.join(".")}: ${err.message}`);
+
+      return {
+        isValid: false,
+        errors: [...missingVars, ...invalidVars],
+        missingVars,
+        invalidVars,
+      };
+    }
+    return {
+      isValid: false,
+      errors: [error.message],
+      missingVars: [],
+      invalidVars: [error.message],
+    };
+  }
+};
+
 // Helper: runtime-only strict validator for use in API routes
 export const validateRuntimeEnv = () => {
   // If explicitly bypassed, skip strict validation
@@ -234,4 +273,30 @@ export const validateRuntimeEnv = () => {
     if (invalidVars.length) msg += ` Invalid: ${invalidVars.join(", ")}`;
     throw new Error(msg);
   }
+};
+
+// Safe validation for Vercel - returns errors instead of throwing
+export const safeValidateEnv = () => {
+  const result = envSchema.safeParse(process.env);
+  if (result.success) {
+    return { ok: true, errors: [] };
+  }
+
+  const missingVars = result.error.issues
+    .filter(
+      (i) => i.code === "invalid_type" && (i as any).received === "undefined",
+    )
+    .map((i) => i.path.join("."));
+  const invalidVars = result.error.issues
+    .filter(
+      (i) => i.code !== "invalid_type" || (i as any).received !== "undefined",
+    )
+    .map((i) => `${i.path.join(".")}: ${i.message}`);
+
+  return {
+    ok: false,
+    errors: [...missingVars, ...invalidVars],
+    missingVars,
+    invalidVars,
+  };
 };

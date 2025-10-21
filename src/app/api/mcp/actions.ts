@@ -86,7 +86,7 @@ export async function saveMcpClientAction(
   }
 
   // Check for duplicate names if creating a featured server
-  if (server.visibility === "public") {
+  if ((server as any).visibility === "public") {
     // Only admins can create featured MCP servers
     const canShare = await canShareMCPServer();
     if (!canShare) {
