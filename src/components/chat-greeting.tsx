@@ -27,13 +27,13 @@ export const ChatGreeting = () => {
   }, []);
 
   const quickActions = [
-    { icon: Calculator, text: "Create New Estimate", color: "text-yellow-600" },
-    { icon: Building2, text: "Manage Vendors", color: "text-yellow-600" },
-    { icon: Users, text: "Track Labor Costs", color: "text-yellow-600" },
+    { icon: Calculator, text: "Create New Estimate", color: "text-primary" },
+    { icon: Building2, text: "Manage Vendors", color: "text-primary" },
+    { icon: Users, text: "Track Labor Costs", color: "text-primary" },
     {
       icon: TrendingUp,
       text: "View Project Analytics",
-      color: "text-yellow-600",
+      color: "text-primary",
     },
   ];
 
@@ -46,7 +46,7 @@ export const ChatGreeting = () => {
       exit={{ opacity: 0 }}
       transition={{ delay: 0.3, duration: 0.6 }}
     >
-      <div className="rounded-2xl bg-gradient-to-br from-yellow-50 to-yellow-100 p-8 border border-yellow-200 shadow-lg">
+      <div className="rounded-2xl bg-card p-8 border border-border shadow-lg">
         {/* Animated Header */}
         <motion.div
           className="text-center mb-6"
@@ -59,11 +59,11 @@ export const ChatGreeting = () => {
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
             >
-              <Hammer className="w-8 h-8 text-yellow-600" />
+              <Hammer className="w-8 h-8 text-primary" />
             </motion.div>
             <div className="flex items-center gap-3">
-              <BBPLogo size="lg" className="text-yellow-600" />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-yellow-500 bg-clip-text text-transparent">
+              <BBPLogo size="lg" className="text-primary" />
+              <h1 className="text-3xl font-bold text-primary">
                 Builder&apos;s Business Partner
               </h1>
             </div>
@@ -76,12 +76,12 @@ export const ChatGreeting = () => {
                 delay: 1,
               }}
             >
-              <Wrench className="w-8 h-8 text-yellow-600" />
+              <Wrench className="w-8 h-8 text-primary" />
             </motion.div>
           </div>
 
           <motion.p
-            className="text-lg text-gray-700 mb-4"
+            className="text-lg text-muted-foreground mb-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
@@ -100,7 +100,7 @@ export const ChatGreeting = () => {
           {quickActions.map((action, index) => (
             <motion.button
               key={action.text}
-              className="group relative p-4 rounded-xl bg-white border border-yellow-200 hover:border-yellow-300 hover:shadow-md transition-all duration-200"
+              className="group relative p-4 rounded-xl bg-card border border-border hover:border-primary hover:shadow-md transition-all duration-200"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               initial={{ opacity: 0, y: 20 }}
@@ -111,7 +111,7 @@ export const ChatGreeting = () => {
                 <action.icon
                   className={`w-6 h-6 ${action.color} group-hover:scale-110 transition-transform`}
                 />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-yellow-700 transition-colors">
+                <span className="text-sm font-medium text-card-foreground group-hover:text-primary transition-colors">
                   {action.text}
                 </span>
               </div>
@@ -126,7 +126,7 @@ export const ChatGreeting = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
         >
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             💡 <strong>Pro Tip:</strong> Start by describing your project, and
             I&apos;ll help you create a detailed estimate with materials, labor,
             and timeline.
