@@ -13,6 +13,8 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+import { validateRuntimeEnv } from "lib/env";
+
 import { customModelProvider, isToolCallUnsupportedModel } from "lib/ai/models";
 
 import { mcpClientsManager } from "lib/ai/mcp/mcp-manager";
@@ -59,6 +61,9 @@ const logger = globalLogger.withDefaults({
 });
 
 export async function POST(request: Request) {
+  // Strict runtime env check - will throw with a clear message if required vars are missing
+  validateRuntimeEnv();
+
   try {
     const json = await request.json();
 

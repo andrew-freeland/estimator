@@ -50,7 +50,7 @@ export const pgMcpMcpToolCustomizationRepository: McpToolCustomizationRepository
     },
 
     async upsertToolCustomization(data) {
-      const now = new Date();
+      const _now = new Date();
       const [result] = await db
         .insert(McpToolCustomizationTable)
         .values({
@@ -58,7 +58,7 @@ export const pgMcpMcpToolCustomizationRepository: McpToolCustomizationRepository
           toolName: data.toolName,
           mcpServerId: data.mcpServerId,
           prompt: data.prompt,
-        })
+        } as any)
         .onConflictDoUpdate({
           target: [
             McpToolCustomizationTable.userId,
@@ -67,8 +67,7 @@ export const pgMcpMcpToolCustomizationRepository: McpToolCustomizationRepository
           ],
           set: {
             prompt: data.prompt ?? null,
-            updatedAt: now,
-          },
+          } as any,
         })
         .returning();
       return result as any;

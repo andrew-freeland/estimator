@@ -1,4 +1,4 @@
-import { SidebarProvider } from "ui/sidebar";
+import { SidebarProvider, SidebarInset } from "ui/sidebar";
 import { AppSidebar } from "@/components/layouts/app-sidebar";
 import { AppHeader } from "@/components/layouts/app-header";
 import { cookies } from "next/headers";
@@ -21,13 +21,16 @@ export default async function ChatLayout({
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
-      <SWRConfigProvider user={undefined}>
-        <AppPopupProvider userSettingsComponent={null} />
-        <main className="relative bg-background w-full flex flex-col h-screen">
-          <AppHeader session={undefined} />
-          <div className="flex-1 overflow-y-auto">{children}</div>
-        </main>
-      </SWRConfigProvider>
+      <AppSidebar user={undefined} />
+      <SidebarInset>
+        <SWRConfigProvider user={undefined}>
+          <AppPopupProvider userSettingsComponent={null} />
+          <main className="relative bg-background w-full flex flex-col h-screen">
+            <AppHeader session={undefined} />
+            <div className="flex-1 overflow-y-auto">{children}</div>
+          </main>
+        </SWRConfigProvider>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

@@ -48,7 +48,7 @@ export const pgContractorProfileRepository = {
         laborPricingFile: data.laborPricingFile,
         materialPricingFile: data.materialPricingFile,
         isComplete: true,
-      })
+      } as any)
       .returning();
 
     return profile;
@@ -90,8 +90,7 @@ export const pgContractorProfileRepository = {
       .update(ContractorProfileTable)
       .set({
         ...data,
-        updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(ContractorProfileTable.userId, userId))
       .returning();
 

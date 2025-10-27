@@ -1,52 +1,133 @@
-// New: lightweight masked debug route for quick health checks
-import { NextResponse } from "next/server";
-import { fileStorageDriver } from "lib/file-storage";
-import { IS_VERCEL_ENV } from "lib/const";
+// @module: debug_api
+// Debug endpoint to help diagnose 500 errors
+// Provides detailed information about system status
 
-function mask(value: string | undefined) {
-  if (!value) return "not set";
-  if (value.length <= 6) return value.replace(/./g, "*");
-  return value.slice(0, 3) + value.slice(-3).replace(/./g, "*");
-}
+import { NextRequest, NextResponse } from "next/server";
+import { env, validateEnv } from "@/lib/env";
+import { customModelProvider } from "@/lib/ai/models";
+import logger from "@/lib/logger";
 
-export async function GET() {
+export async function GET(_request: NextRequest) {
+  const debugInfo = {
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    vercel: {
+      isVercel: !!process.env.VERCEL,
+      env: process.env.VERCEL_ENV,
+      url: process.env.VERCEL_URL,
+    },
+    checks: {
+      environment: false,
+      models: false,
+      openai: false,
+    },
+    errors: [] as string[],
+    env: {
+      hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+      hasAuthSecret: !!process.env.BETTER_AUTH_SECRET,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      authDisabled: process.env.AUTH_DISABLED === "true",
+    },
+  };
+
   try {
-    // Minimal checks - do not try to connect to external services here to avoid slowdowns
-    const envSummary = {
-      NODE_ENV: process.env.NODE_ENV || "not set",
-      VERCEL: process.env.VERCEL || "not set",
-      BETTER_AUTH_SECRET: mask(process.env.BETTER_AUTH_SECRET),
-      OPENAI_API_KEY: mask(process.env.OPENAI_API_KEY),
-      FILE_STORAGE_TYPE: process.env.FILE_STORAGE_TYPE || fileStorageDriver,
-      BLOB_READ_WRITE_TOKEN: mask(process.env.BLOB_READ_WRITE_TOKEN),
-      EA_GCS_BUCKET_NAME: mask(process.env.EA_GCS_BUCKET_NAME),
-    };
+    // Check environment validation
+    try {
+      validateEnv();
+      debugInfo.checks.environment = true;
+    } catch (envError) {
+      debugInfo.errors.push(
+        `Environment validation failed: ${envError.message}`,
+      );
+    }
 
-    const storageCheck = {
-      driver: fileStorageDriver,
-      directUploadSupported: ["vercel-blob", "s3", "gcs"].includes(
-        fileStorageDriver,
-      ),
-      message:
-        fileStorageDriver === "vercel-blob"
-          ? "Ensure BLOB_READ_WRITE_TOKEN is set for direct uploads"
-          : fileStorageDriver === "gcs"
-            ? "Ensure EA_GCS_BUCKET_NAME & GCP auth are configured"
-            : "Ensure S3 keys are set for s3 driver",
-    };
+    // Check model provider
+    try {
+      const _model = await customModelProvider.getModel({
+        provider: "openai",
+        model: env.EA_EXPLAINER_MODEL || "gpt-4o",
+      });
+      debugInfo.checks.models = true;
+    } catch (modelError) {
+      debugInfo.errors.push(`Model loading failed: ${modelError.message}`);
+    }
+
+    // Check OpenAI API (basic connectivity)
+    try {
+      // Simple OpenAI API check
+      const response = await fetch("https://api.openai.com/v1/models", {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+      });
+      if (response.ok) {
+        debugInfo.checks.openai = true;
+      } else {
+        debugInfo.errors.push(`OpenAI API check failed: ${response.status}`);
+      }
+    } catch (openaiError) {
+      debugInfo.errors.push(`OpenAI API error: ${openaiError.message}`);
+    }
 
     return NextResponse.json({
       status: "ok",
-      env: envSummary,
-      storage: storageCheck,
-      meta: {
-        isVercel: !!IS_VERCEL_ENV,
-        timestamp: new Date().toISOString(),
-      },
+      ...debugInfo,
     });
-  } catch (err) {
+  } catch (error) {
+    logger.error("Debug endpoint error:", error);
     return NextResponse.json(
-      { status: "error", message: String(err) },
+      {
+        status: "error",
+        error: error.message,
+        ...debugInfo,
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { messages } = await request.json();
+
+    if (!messages || !Array.isArray(messages)) {
+      return NextResponse.json(
+        { error: "Invalid messages format" },
+        { status: 400 },
+      );
+    }
+
+    // Test the orchestrator with a simple message
+    const testRequest = {
+      messages: [
+        {
+          role: "user" as const,
+          content: "Hello, this is a test message",
+        },
+      ],
+      threadId: "debug-test",
+      userId: "debug-user",
+      sessionId: "debug-session",
+      context: {},
+    };
+
+    // Import orchestrator dynamically to avoid circular imports
+    const { orchestrator } = await import("@/lib/orchestrator");
+    const result = await orchestrator(testRequest);
+
+    return NextResponse.json({
+      status: "ok",
+      message: "Orchestrator test completed",
+      responseStatus: result.status,
+    });
+  } catch (error) {
+    logger.error("Debug POST error:", error);
+    return NextResponse.json(
+      {
+        status: "error",
+        error: error.message,
+        stack: error.stack,
+      },
       { status: 500 },
     );
   }

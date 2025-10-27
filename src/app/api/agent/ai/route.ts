@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
       .ifOk((appTools) => {
         objectFlow(appTools).forEach((_, toolName) => {
-          toolNames.add(toolName);
+          toolNames.add(toolName as string);
         });
       })
       .unwrap();

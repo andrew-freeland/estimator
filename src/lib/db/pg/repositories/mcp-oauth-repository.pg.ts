@@ -40,15 +40,13 @@ export const pgMcpOAuthRepository: McpOAuthRepository = {
 
   // Create new OAuth session
   createSession: async (mcpServerId, data) => {
-    const now = new Date();
+    const _now = new Date();
 
     const [session] = await db
       .insert(McpOAuthSessionTable)
       .values({
         ...(data as McpOAuthSession),
         mcpServerId,
-        createdAt: now,
-        updatedAt: now,
       })
       .returning();
 
@@ -57,13 +55,12 @@ export const pgMcpOAuthRepository: McpOAuthRepository = {
 
   // Update existing session by state
   updateSessionByState: async (state, data) => {
-    const now = new Date();
+    const _now = new Date();
 
     const [session] = await db
       .update(McpOAuthSessionTable)
       .set({
         ...data,
-        updatedAt: now,
       })
       .where(eq(McpOAuthSessionTable.state, state))
       .returning();
@@ -80,7 +77,6 @@ export const pgMcpOAuthRepository: McpOAuthRepository = {
       .update(McpOAuthSessionTable)
       .set({
         ...data,
-        updatedAt: new Date(),
       })
       .where(eq(McpOAuthSessionTable.state, state))
       .returning();

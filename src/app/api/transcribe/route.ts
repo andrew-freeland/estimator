@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import { validateRuntimeEnv } from "lib/env";
 
 export async function POST(req: Request) {
+  // Strict runtime env check - will throw with a clear message if required vars are missing
+  validateRuntimeEnv();
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;

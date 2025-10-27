@@ -5,7 +5,7 @@
 import "server-only";
 import { streamText } from "ai";
 import { customModelProvider } from "@/lib/ai/models";
-import { env, validateEnv } from "@/lib/env";
+import { env, validateEnvGraceful } from "@/lib/env";
 import logger from "@/lib/logger";
 import { getSystemPrompt } from "./systemPrompt";
 import type { OrchestratorRequest, AgentType } from "./types";
@@ -29,11 +29,39 @@ export async function orchestrator(
   request: OrchestratorRequest,
 ): Promise<Response> {
   try {
-    // Validate environment
-    validateEnv();
+    // Validate environment with better error handling
+    try {
+      validateEnv();
+    } catch (envError) {
+      logger.error("Environment validation failed:", envError);
+      return new Response(
+        JSON.stringify({
+          error: "Configuration error",
+          details: envError.message,
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
 
-    // Validate request
-    validateRequest(request);
+    // Validate request with detailed error messages
+    try {
+      validateRequest(request);
+    } catch (validationError) {
+      logger.error("Request validation failed:", validationError);
+      return new Response(
+        JSON.stringify({
+          error: "Invalid request",
+          details: validationError.message,
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
 
     const { messages, threadId, userId, sessionId, context } = request;
 
@@ -42,40 +70,102 @@ export async function orchestrator(
     // For MVP, route everything to estimator agent
     const agentType: AgentType = "estimator";
 
-    // Get the system prompt for the selected agent
-    const systemPrompt = getSystemPrompt(agentType, {
-      userId,
-      sessionId,
-      context,
-    });
-
-    // Get the AI model
-    const model = await customModelProvider.getModel({
-      provider: "openai",
-      model: env.EA_EXPLAINER_MODEL, // Uses "gpt-4o" from env
-    });
-
-    // Process the message through the AI model
-    const result = await streamText({
-      model,
-      messages: [
+    // Get the system prompt for the selected agent with error handling
+    let systemPrompt;
+    try {
+      systemPrompt = getSystemPrompt(agentType, {
+        userId,
+        sessionId,
+        context,
+      });
+    } catch (promptError) {
+      logger.error("System prompt generation failed:", promptError);
+      return new Response(
+        JSON.stringify({
+          error: "Prompt generation failed",
+          details: promptError.message,
+        }),
         {
-          role: "system",
-          content: systemPrompt,
+          status: 500,
+          headers: { "Content-Type": "application/json" },
         },
-        ...messages,
-      ],
-    });
-
-    return result.toTextStreamResponse();
-  } catch (error) {
-    logger.error("Error in orchestrator:", error);
-
-    if (error instanceof ValidationError) {
-      return new Response(error.message, { status: error.statusCode });
+      );
     }
 
-    return new Response("Internal server error", { status: 500 });
+    // Get the AI model with error handling
+    let model;
+    try {
+      model = await customModelProvider.getModel({
+        provider: "openai",
+        model: env.EA_EXPLAINER_MODEL, // Uses "gpt-4o" from env
+      });
+    } catch (modelError) {
+      logger.error("Model loading failed:", modelError);
+      return new Response(
+        JSON.stringify({
+          error: "Model unavailable",
+          details: "Failed to load AI model",
+        }),
+        {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Process the message through the AI model with error handling
+    try {
+      const result = await streamText({
+        model,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          ...messages,
+        ],
+      });
+
+      return result.toTextStreamResponse();
+    } catch (streamError) {
+      logger.error("Streaming failed:", streamError);
+      return new Response(
+        JSON.stringify({
+          error: "AI processing failed",
+          details: streamError.message,
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+  } catch (error) {
+    logger.error("Unexpected error in orchestrator:", error);
+
+    if (error instanceof ValidationError) {
+      return new Response(
+        JSON.stringify({
+          error: error.message,
+          statusCode: error.statusCode,
+        }),
+        {
+          status: error.statusCode,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        error: "Internal server error",
+        details: error.message,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 }
 

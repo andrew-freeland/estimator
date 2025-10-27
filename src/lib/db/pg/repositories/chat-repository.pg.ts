@@ -19,7 +19,6 @@ export const pgChatRepository: ChatRepository = {
       .values({
         title: thread.title,
         userId: thread.userId,
-        id: thread.id,
       })
       .returning();
     return result;
@@ -175,9 +174,8 @@ export const pgChatRepository: ChatRepository = {
       .onConflictDoUpdate({
         target: [ChatMessageTable.id],
         set: {
-          parts: message.parts,
           metadata: message.metadata,
-        },
+        } as any,
       })
       .returning();
     return result[0] as ChatMessage;

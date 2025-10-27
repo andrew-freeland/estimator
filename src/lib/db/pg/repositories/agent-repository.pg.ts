@@ -15,8 +15,7 @@ export const pgAgentRepository: AgentRepository = {
         userId: agent.userId,
         instructions: agent.instructions,
         visibility: agent.visibility || "private",
-        updatedAt: new Date(),
-      })
+      } as any)
       .returning();
 
     return {

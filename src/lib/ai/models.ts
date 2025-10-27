@@ -157,7 +157,7 @@ async function getFallbackModel() {
 // Research-backed fix: Enhanced model capability detection and fallback strategies
 export const customModelProvider = {
   async getModelsInfo() {
-    const { allModels, staticModels } = await getModels();
+    const { allModels } = await getModels();
     const results = [];
     for (const [provider, models] of Object.entries(allModels)) {
       const modelEntries = [];
@@ -171,7 +171,7 @@ export const customModelProvider = {
       results.push({
         provider,
         models: modelEntries,
-        hasAPIKey: checkProviderAPIKey(provider as keyof typeof staticModels),
+        hasAPIKey: checkProviderAPIKey(provider as string),
       });
     }
     return results;
@@ -238,7 +238,7 @@ export const customModelProvider = {
   // Research-backed fix: Provider health check
   async checkProviderHealth(provider: string): Promise<boolean> {
     try {
-      const { allModels, staticModels } = await getModels();
+      const { allModels } = await getModels();
       const model = allModels[provider as keyof typeof allModels];
       if (!model) return false;
 
@@ -247,7 +247,7 @@ export const customModelProvider = {
 
       // Simple health check - attempt to generate a minimal response
       // This would be implemented with a lightweight test call
-      return checkProviderAPIKey(provider as keyof typeof staticModels);
+      return checkProviderAPIKey(provider as string);
     } catch (_error) {
       return false;
     }

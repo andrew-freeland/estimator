@@ -45,7 +45,6 @@ export const pgUserRepository: UserRepository = {
         ...(name && { name }),
         ...(image && { image }),
         ...(email && { email }),
-        updatedAt: new Date(),
       })
       .where(eq(UserTable.id, userId))
       .returning();
@@ -63,8 +62,7 @@ export const pgUserRepository: UserRepository = {
       .update(UserTable)
       .set({
         preferences,
-        updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(UserTable.id, userId))
       .returning();
     return {

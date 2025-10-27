@@ -58,6 +58,15 @@ export default () => {
         };
       }
 
+      // Handle ES module compatibility for better-auth
+      if (isServer) {
+        // Configure module resolution for ES modules
+        config.resolve.extensionAlias = {
+          ...config.resolve.extensionAlias,
+          ".js": [".js", ".ts", ".tsx"],
+        };
+      }
+
       // Exclude better-auth from Edge Runtime bundling
       config.externals = config.externals || [];
       if (Array.isArray(config.externals)) {

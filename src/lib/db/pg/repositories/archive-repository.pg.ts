@@ -17,7 +17,7 @@ export const pgArchiveRepository: ArchiveRepository = {
         name: archive.name,
         description: archive.description,
         userId: archive.userId,
-      })
+      } as any)
       .returning();
     return result as Archive;
   },
@@ -62,8 +62,7 @@ export const pgArchiveRepository: ArchiveRepository = {
       .set({
         name: archive.name,
         description: archive.description,
-        updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(ArchiveTable.id, id))
       .returning();
     return result as Archive;
@@ -78,11 +77,9 @@ export const pgArchiveRepository: ArchiveRepository = {
     const [result] = await db
       .insert(ArchiveItemTable)
       .values({
-        id: generateUUID(),
         archiveId,
         itemId,
         userId,
-        addedAt: new Date(),
       })
       .onConflictDoNothing()
       .returning();

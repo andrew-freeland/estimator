@@ -16,6 +16,7 @@ import logger from "logger";
 import { userRepository } from "lib/db/repository";
 import { DEFAULT_USER_ROLE, USER_ROLES } from "app-types/roles";
 import { admin, editor, user, ac } from "./roles";
+import { isGuestMode } from "lib/env";
 
 const {
   emailAndPasswordEnabled,
@@ -47,40 +48,36 @@ const options = {
       enabled: true,
     },
   },
-  database: drizzleAdapter(pgDb, {
-    provider: "pg",
-    schema: {
-      user: UserTable,
-      session: SessionTable,
-      account: AccountTable,
-      verification: VerificationTable,
-    },
-  }),
-  databaseHooks: {
-    user: {
-      create: {
-        before: async (user) => {
-          // This hook ONLY runs during user creation (sign-up), not on sign-in
-          // Use our optimized getIsFirstUser function with caching
-          const isFirstUser = await getIsFirstUser();
+  // Only add database hooks if we have a database connection
+  ...(pgDb && !isGuestMode
+    ? {
+        databaseHooks: {
+          user: {
+            create: {
+              before: async (user) => {
+                // This hook ONLY runs during user creation (sign-up), not on sign-in
+                // Use our optimized getIsFirstUser function with caching
+                const isFirstUser = await getIsFirstUser();
 
-          // Set role based on whether this is the first user
-          const role = isFirstUser ? USER_ROLES.ADMIN : DEFAULT_USER_ROLE;
+                // Set role based on whether this is the first user
+                const role = isFirstUser ? USER_ROLES.ADMIN : DEFAULT_USER_ROLE;
 
-          logger.info(
-            `User creation hook: ${user.email} will get role: ${role} (isFirstUser: ${isFirstUser})`,
-          );
+                logger.info(
+                  `User creation hook: ${user.email} will get role: ${role} (isFirstUser: ${isFirstUser})`,
+                );
 
-          return {
-            data: {
-              ...user,
-              role,
+                return {
+                  data: {
+                    ...user,
+                    role,
+                  },
+                };
+              },
             },
-          };
+          },
         },
-      },
-    },
-  },
+      }
+    : {}),
   emailAndPassword: {
     enabled: emailAndPasswordEnabled,
     disableSignUp: !signUpEnabled,
@@ -117,6 +114,20 @@ const options = {
   //   signUp: "/sign-up",
   //   home: "/chat",
   // },
+  // Only add database configuration if we have a database connection
+  ...(pgDb && !isGuestMode
+    ? {
+        database: drizzleAdapter(pgDb, {
+          provider: "pg",
+          schema: {
+            user: UserTable,
+            session: SessionTable,
+            account: AccountTable,
+            verification: VerificationTable,
+          },
+        }),
+      }
+    : {}),
 } satisfies BetterAuthOptions;
 
 export const auth = betterAuth({
@@ -125,6 +136,11 @@ export const auth = betterAuth({
 });
 
 export const getSession = async () => {
+  // In guest mode, always return null since there's no authentication
+  if (isGuestMode) {
+    return null;
+  }
+
   try {
     const session = await auth.api.getSession({
       headers: await headers(),

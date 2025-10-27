@@ -267,7 +267,7 @@ export default function SimplifiedPromptInput({
         }
 
         const { text } = await res.json();
-        setInput((prev) => prev + (prev ? " " : "") + text);
+        setInput(input + (input ? " " : "") + text);
         toast.success("Voice memo transcribed");
       } catch (error) {
         console.error("Transcription error:", error);

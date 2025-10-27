@@ -303,7 +303,7 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ""}`,
                         ...prevHistory,
                         endedAt: Date.now(),
                         status: event.isOk ? "success" : "fail",
-                        error: event.error,
+                        error: event.error?.message || String(event.error),
                         result: {
                           output: source?.outputs?.[prevHistory.nodeId],
                           input: source?.inputs?.[prevHistory.nodeId],

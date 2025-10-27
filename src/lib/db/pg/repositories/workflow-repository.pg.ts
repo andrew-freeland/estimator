@@ -170,7 +170,6 @@ export const pgWorkflowRepository: WorkflowRepository = {
         target: [WorkflowTable.id],
         set: {
           ...workflow,
-          updatedAt: new Date(),
         },
       })
       .returning();
@@ -218,9 +217,6 @@ export const pgWorkflowRepository: WorkflowRepository = {
           .onConflictDoUpdate({
             target: [WorkflowNodeDataTable.id],
             set: {
-              nodeConfig: sql.raw(
-                `excluded.${WorkflowNodeDataTable.nodeConfig.name}`,
-              ),
               uiConfig: sql.raw(
                 `excluded.${WorkflowNodeDataTable.uiConfig.name}`,
               ),
@@ -230,7 +226,7 @@ export const pgWorkflowRepository: WorkflowRepository = {
               ),
               kind: sql.raw(`excluded.${WorkflowNodeDataTable.kind.name}`),
               updatedAt: new Date(),
-            },
+            } as any,
           });
       }
       if (edges?.length) {

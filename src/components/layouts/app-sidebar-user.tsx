@@ -46,22 +46,56 @@ import { Skeleton } from "ui/skeleton";
 export function AppSidebarUserInner(props: {
   user?: BasicUser;
 }) {
-  const { data: user } = useSWR<BasicUser>(`/api/user/details`, fetcher, {
-    fallbackData: props.user,
-    suspense: true,
-    revalidateOnMount: false,
-    revalidateOnFocus: false,
-    shouldRetryOnError: false,
-    refreshInterval: 1000 * 60 * 10,
-  });
+  // If no user prop is provided, assume guest mode and don't fetch
+  const isGuestMode = !props.user;
+
+  const { data: user } = useSWR<BasicUser>(
+    isGuestMode ? null : `/api/user/details`,
+    fetcher,
+    {
+      fallbackData: props.user,
+      suspense: true,
+      revalidateOnMount: false,
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+      refreshInterval: 1000 * 60 * 10,
+    },
+  );
   const appStoreMutate = appStore((state) => state.mutate);
   const t = useTranslations("Layout");
 
   const logout = () => {
+    if (isGuestMode) {
+      // In guest mode, just redirect to home
+      window.location.href = "/";
+      return;
+    }
     authClient.signOut().finally(() => {
       window.location.href = "/sign-in";
     });
   };
+
+  // In guest mode, show a simple guest indicator
+  if (isGuestMode) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground bg-input/30 border"
+            size={"lg"}
+            data-testid="sidebar-guest-button"
+          >
+            <Avatar className="rounded-full size-8 border">
+              <AvatarFallback>G</AvatarFallback>
+            </Avatar>
+            <span className="truncate" data-testid="sidebar-guest-text">
+              Guest Mode
+            </span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
 
   if (!user) return null;
 

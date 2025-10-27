@@ -5,6 +5,7 @@ import { serverFileStorage, storageDriver } from "lib/file-storage";
 import globalLogger from "lib/logger";
 import { colorize } from "consola/utils";
 import { checkStorageAction } from "../actions";
+import { validateRuntimeEnv } from "lib/env";
 
 // Fixed Vercel Edge runtime (Better-Auth)
 export const runtime = "nodejs";
@@ -126,6 +127,9 @@ async function handleGenericUpload(request: GenericUploadRequest) {
  * - Local FS: Fallback to server upload
  */
 export async function POST(request: Request) {
+  // Strict runtime env check - will throw with a clear message if required vars are missing
+  validateRuntimeEnv();
+
   // Authenticate
   const session = await getSession();
   if (!session?.user?.id) {

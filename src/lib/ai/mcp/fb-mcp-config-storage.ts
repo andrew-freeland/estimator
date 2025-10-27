@@ -207,11 +207,9 @@ function toMcpServerArray(
 ): (typeof McpServerTable.$inferSelect)[] {
   return Object.entries(config).map(([name, config]) =>
     fillMcpServerTable({
-      id: name,
       name,
       config,
       userId: "file-based-user",
-      visibility: "private",
     }),
   );
 }
